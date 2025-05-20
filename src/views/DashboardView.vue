@@ -1729,7 +1729,7 @@ const handleAddJob = () => {
 }
 
 .avatar-placeholder {
-  width: a20px;
+  width: 120px;
   height: 120px;
   border-radius: 50%;
   background-color: #f0f0f0;
