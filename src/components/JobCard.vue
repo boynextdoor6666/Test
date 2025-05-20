@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 interface Job {
   id: number
   title: string
@@ -7,39 +9,114 @@ interface Job {
   location: string
   phone: string
   date: string
+  category?: string // Может быть добавлено из JobsView
+  status?: string // Может быть добавлено из DashboardView
+  applications?: any[] // Заявки на вакансию
 }
 
-defineProps<{
+const props = defineProps<{
   job: Job
+  isEmployer?: boolean // Показывает, является ли текущий пользователь работодателем
 }>()
+
+// Определяем события для родительского компонента
+const emit = defineEmits(['edit', 'delete', 'apply'])
+
+// Форматирование статуса
+function formatStatus(status: string): string {
+  const statusMap: Record<string, string> = {
+    new: 'Новое',
+    'in-progress': 'В работе',
+    completed: 'Завершено',
+  }
+  return statusMap[status] || status
+}
+
+// Обработчики событий
+function handleEdit() {
+  emit('edit', props.job)
+}
+
+function handleDelete() {
+  if (confirm('Вы уверены, что хотите удалить эту вакансию?')) {
+    emit('delete', props.job.id)
+  }
+}
+
+function handleApply() {
+  emit('apply', props.job)
+}
+
+// Определяем, есть ли активные заявки
+const hasApplications = computed(() => {
+  return props.job.applications && props.job.applications.length > 0
+})
+
+// Форматирование даты
+function formatDate(dateString: string): string {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('ru-RU')
+}
 </script>
 
 <template>
-  <div class="job-card">
+  <div class="job-card" :class="{ 'has-applications': hasApplications }">
+    <div class="job-status-badge" v-if="job.status && job.status !== 'new'">
+      {{ formatStatus(job.status) }}
+    </div>
+
     <h3 class="job-title">{{ job.title }}</h3>
     <p class="job-description">{{ job.description }}</p>
 
     <div class="job-details">
       <div class="job-detail">
-        <i class="icon-location"></i>
+        <i class="fas fa-map-marker-alt"></i>
         <span>{{ job.location }}</span>
       </div>
       <div class="job-detail">
-        <i class="icon-money"></i>
+        <i class="fas fa-money-bill-wave"></i>
         <span>{{ job.salary }}</span>
       </div>
       <div class="job-detail">
-        <i class="icon-phone"></i>
+        <i class="fas fa-phone"></i>
         <span>{{ job.phone }}</span>
+      </div>
+      <div class="job-detail" v-if="job.category">
+        <i class="fas fa-tag"></i>
+        <span>{{ job.category }}</span>
+      </div>
+      <div class="job-detail">
+        <i class="fas fa-calendar-alt"></i>
+        <span>{{ formatDate(job.date) }}</span>
+      </div>
+      <div class="job-applications" v-if="hasApplications && isEmployer">
+        <i class="fas fa-user-check"></i>
+        <span>Заявок: {{ job.applications.length }}</span>
       </div>
     </div>
 
     <div class="job-footer">
       <div class="job-actions">
-        <router-link :to="`/jobs/${job.id}`" class="btn btn-primary">Подробнее</router-link>
-      </div>
-      <div class="job-date">
-        <small>{{ new Date(job.date).toLocaleDateString('ru-RU') }}</small>
+        <router-link :to="`/jobs/${job.id}`" class="btn btn-sm btn-primary">
+          <i class="fas fa-info-circle"></i> Подробнее
+        </router-link>
+
+        <template v-if="isEmployer && job.status === 'new'">
+          <button @click="handleEdit" class="btn btn-sm btn-outline">
+            <i class="fas fa-edit"></i> Изменить
+          </button>
+          <button @click="handleDelete" class="btn btn-sm btn-danger">
+            <i class="fas fa-trash-alt"></i> Удалить
+          </button>
+        </template>
+
+        <button
+          v-if="!isEmployer && job.status === 'new'"
+          @click="handleApply"
+          class="btn btn-sm btn-success"
+        >
+          <i class="fas fa-check"></i> Откликнуться
+        </button>
       </div>
     </div>
   </div>
@@ -56,11 +133,40 @@ defineProps<{
   display: flex;
   flex-direction: column;
   border: 1px solid var(--border-color);
+  position: relative;
+  overflow: hidden;
 }
 
 .job-card:hover {
   transform: translateY(-5px);
   box-shadow: var(--card-shadow);
+}
+
+.job-card.has-applications {
+  border-left: 4px solid var(--primary-color);
+}
+
+.job-status-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background-color: var(--primary-color);
+  color: white;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  border-bottom-left-radius: var(--radius-md);
+  font-weight: var(--font-weight-medium);
+}
+
+.job-status-badge:after {
+  content: '';
+  position: absolute;
+  left: -8px;
+  bottom: 0;
+  width: 0;
+  height: 0;
+  border-right: 8px solid var(--primary-color);
+  border-top: 8px solid transparent;
 }
 
 .job-title {
@@ -105,6 +211,23 @@ defineProps<{
   padding: var(--spacing-xs) 0;
 }
 
+.job-detail i,
+.job-applications i {
+  width: 20px;
+  margin-right: var(--spacing-sm);
+  color: var(--primary-color);
+  text-align: center;
+}
+
+.job-applications {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-xs) 0;
+  font-size: 0.9rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--primary-color);
+}
+
 .job-footer {
   display: flex;
   justify-content: space-between;
@@ -119,48 +242,21 @@ defineProps<{
   gap: var(--spacing-sm);
 }
 
-.job-date {
-  color: var(--text-light);
+.btn-sm {
+  padding: 6px 12px;
   font-size: 0.85rem;
-  font-family: var(--font-family-body);
-}
-
-/* Icons */
-.icon-location,
-.icon-money,
-.icon-phone {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  margin-right: var(--spacing-sm);
-  color: var(--primary-color);
-}
-
-.icon-location::before {
-  content: '📍';
-}
-
-.icon-money::before {
-  content: '💰';
-}
-
-.icon-phone::before {
-  content: '📞';
 }
 
 @media (max-width: 768px) {
-  .job-footer {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--spacing-sm);
+  .job-actions {
+    flex-wrap: wrap;
   }
 
-  .job-date {
-    width: 100%;
-    text-align: left;
-    margin-top: var(--spacing-xs);
+  .btn-sm {
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    flex: 1;
+    text-align: center;
   }
 }
 </style>

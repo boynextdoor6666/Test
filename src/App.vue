@@ -43,20 +43,21 @@ import Navbar from './components/Navbar.vue'
           <h3 class="footer-heading">Контакты</h3>
           <ul class="footer-links">
             <li>
-              <a href="tel:+996555123456" class="footer-link">
-                <i class="fas fa-phone"></i> +996 555 123456
+              <a href="tel:+996551714547" class="footer-link">
+                <i class="fas fa-phone"></i> +996 551 714 547
               </a>
             </li>
             <li>
-              <a href="mailto:info@tezjumush.kg" class="footer-link">
-                <i class="fas fa-envelope"></i> info@tezjumush.kg
+              <a href="tel:+996556031224" class="footer-link">
+                <i class="fas fa-phone"></i> +996 556 031 224
               </a>
             </li>
             <li>
-              <a href="https://maps.google.com" target="_blank" class="footer-link">
-                <i class="fas fa-map-marker-alt"></i> г. Бишкек, ул. Киевская, 123
+              <a href="mailto:tezjumush.ksla@gmail.com" class="footer-link">
+                <i class="fas fa-envelope"></i> tezjumush.ksla@gmail.com
               </a>
             </li>
+            <li></li>
           </ul>
         </div>
 
@@ -66,9 +67,13 @@ import Navbar from './components/Navbar.vue'
             <a href="https://t.me/tezJumush" target="_blank" class="social-link">
               <i class="fab fa-telegram"></i> Telegram
             </a>
-            <a href="#" class="social-link"> <i class="fab fa-instagram"></i> Instagram </a>
-            <a href="#" class="social-link"> <i class="fab fa-facebook-f"></i> Facebook </a>
-            <a href="#" class="social-link"> <i class="fab fa-whatsapp"></i> WhatsApp </a>
+            <a
+              href="https://www.instagram.com/tezjumush.kg?igsh=b3NodHNpcDBrZ2V3&utm_source=qr"
+              target="_blank"
+              class="social-link"
+            >
+              <i class="fab fa-instagram"></i> Instagram
+            </a>
           </div>
         </div>
       </div>
