@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, reactive } from 'vue'
 
 // Тип пользователя и данные пользователя (будут загружены из localStorage)
 const userType = ref('worker')
@@ -13,6 +13,7 @@ const user = ref({
   skills: [], // Навыки работника
   experience: '', // Опыт работы
   avatar: '', // URL аватара
+  photo: '', // Фото профиля (Base64)
 })
 
 // Состояние для редактирования профиля
@@ -31,6 +32,13 @@ const editProfileErrors = ref({
   phone: '',
   email: '',
   age: '',
+})
+
+// Добавляем параметры для обработки фото профиля
+const profilePhoto = reactive({
+  file: null as File | null,
+  preview: '',
+  error: '',
 })
 
 // Вакансии/задания (пример данных)
@@ -90,6 +98,7 @@ onMounted(() => {
         skills: parsedUser.skills || [],
         experience: parsedUser.experience || '',
         avatar: parsedUser.avatar || '',
+        photo: parsedUser.photo || '',
       }
     } catch (e) {
       console.error('Ошибка при загрузке данных пользователя:', e)
@@ -124,6 +133,11 @@ onMounted(() => {
       console.error('Ошибка при загрузке принятых вакансий:', e)
       myJobs.value = []
     }
+  }
+
+  // Загружаем фото из пользовательских данных, если оно есть
+  if (user.value.photo) {
+    profilePhoto.preview = user.value.photo
   }
 })
 
@@ -292,6 +306,15 @@ const openEditProfileModal = () => {
     experience: user.value.experience,
   }
 
+  // Инициализируем фото профиля
+  if (user.value.photo) {
+    profilePhoto.preview = user.value.photo
+  } else {
+    profilePhoto.preview = ''
+  }
+  profilePhoto.file = null
+  profilePhoto.error = ''
+
   // Сбрасываем ошибки
   Object.keys(editProfileErrors.value).forEach((key) => (editProfileErrors.value[key] = ''))
 }
@@ -300,6 +323,51 @@ const closeEditProfileModal = () => {
   showEditProfileModal.value = false
 }
 
+// Обработчик выбора фото
+const handlePhotoChange = (event: Event) => {
+  const input = event.target as HTMLInputElement
+  if (!input.files || input.files.length === 0) {
+    return
+  }
+
+  const file = input.files[0]
+
+  // Проверка на тип файла (только изображения)
+  if (!file.type.match('image.*')) {
+    profilePhoto.error = 'Пожалуйста, выберите изображение'
+    profilePhoto.file = null
+    profilePhoto.preview = ''
+    return
+  }
+
+  // Проверка на размер файла (не более 5МБ)
+  if (file.size > 5 * 1024 * 1024) {
+    profilePhoto.error = 'Размер файла не должен превышать 5МБ'
+    profilePhoto.file = null
+    profilePhoto.preview = ''
+    return
+  }
+
+  // Сохраняем файл и создаем превью
+  profilePhoto.file = file
+  profilePhoto.error = ''
+
+  // Создаем URL для превью
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    profilePhoto.preview = e.target?.result as string
+  }
+  reader.readAsDataURL(file)
+}
+
+// Убираем выбранное фото
+const removePhoto = () => {
+  profilePhoto.file = null
+  profilePhoto.preview = ''
+  profilePhoto.error = ''
+}
+
+// Обновляем функцию сохранения профиля, добавляя сохранение фото
 const saveProfileChanges = () => {
   // Валидация
   let valid = true
@@ -346,6 +414,7 @@ const saveProfileChanges = () => {
       .map((s) => s.trim())
       .filter((s) => s),
     experience: editProfileData.value.experience,
+    photo: profilePhoto.preview || user.value.photo, // Сохраняем фото, если оно есть
   }
 
   // Сохраняем обновленные данные в localStorage
@@ -361,6 +430,7 @@ const saveProfileChanges = () => {
       hasOtherJobs: user.value.hasOtherJobs,
       skills: user.value.skills,
       experience: user.value.experience,
+      photo: user.value.photo, // Сохраняем фото в localStorage
     }
     localStorage.setItem('user', JSON.stringify(updatedUser))
   }
@@ -718,7 +788,11 @@ const handleAddJob = () => {
             </button>
           </div>
 
-          <div class="profile-avatar" v-if="user.avatar">
+          <!-- Обновляем блок отображения аватара профиля пользователя, чтобы показывать загруженное фото -->
+          <div class="profile-avatar" v-if="user.photo">
+            <img :src="user.photo" alt="Фото пользователя" class="avatar-img" />
+          </div>
+          <div class="profile-avatar" v-else-if="user.avatar">
             <img :src="user.avatar" alt="Аватар пользователя" class="avatar-img" />
           </div>
           <div class="profile-avatar" v-else>
@@ -1126,6 +1200,50 @@ const handleAddJob = () => {
       <div class="modal">
         <h2>Редактирование профиля</h2>
         <form @submit.prevent="saveProfileChanges">
+          <!-- Добавляем блок для загрузки фото профиля -->
+          <div class="form-group profile-photo-upload">
+            <label>Фото профиля</label>
+            <div class="photo-upload-container">
+              <div class="photo-preview" :class="{ 'has-photo': profilePhoto.preview }">
+                <img
+                  v-if="profilePhoto.preview"
+                  :src="profilePhoto.preview"
+                  alt="Profile Preview"
+                />
+                <div v-else class="photo-placeholder">
+                  <i class="fas fa-user"></i>
+                </div>
+
+                <button
+                  v-if="profilePhoto.preview"
+                  type="button"
+                  class="remove-photo"
+                  @click="removePhoto"
+                >
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+
+              <div class="photo-upload-controls">
+                <label for="photo-upload-edit" class="upload-btn">
+                  <i class="fas fa-camera"></i>
+                  {{ profilePhoto.preview ? 'Изменить фото' : 'Загрузить фото' }}
+                </label>
+                <input
+                  type="file"
+                  id="photo-upload-edit"
+                  accept="image/*"
+                  @change="handlePhotoChange"
+                  class="photo-input"
+                />
+                <p class="photo-hint">JPG, PNG, GIF. Макс. размер 5МБ</p>
+                <div v-if="profilePhoto.error" class="photo-error">
+                  {{ profilePhoto.error }}
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="form-group">
             <label for="fullName">ФИО *</label>
             <input
@@ -2132,6 +2250,115 @@ textarea.form-control {
   .btn {
     width: 100%;
     margin-bottom: var(--spacing-sm);
+  }
+}
+
+/* Стили для загрузки фото профиля */
+.profile-photo-upload {
+  margin-bottom: 20px;
+}
+
+.photo-upload-container {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.photo-preview {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: #f5f5f5;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  border: 1px solid var(--border-color);
+}
+
+.photo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-placeholder {
+  font-size: 40px;
+  color: #ccc;
+}
+
+.remove-photo {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: rgba(255, 0, 0, 0.7);
+  color: white;
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.remove-photo:hover {
+  background: rgba(255, 0, 0, 0.9);
+}
+
+.photo-upload-controls {
+  flex: 1;
+}
+
+.upload-btn {
+  display: inline-block;
+  padding: 8px 16px;
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 14px;
+}
+
+.upload-btn i {
+  margin-right: 6px;
+}
+
+.upload-btn:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-2px);
+}
+
+.photo-input {
+  display: none;
+}
+
+.photo-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-color-light);
+}
+
+.photo-error {
+  color: var(--danger-color);
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+@media (max-width: 600px) {
+  .photo-upload-container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .photo-upload-controls {
+    text-align: center;
+    width: 100%;
+    margin-top: 10px;
   }
 }
 </style>
