@@ -239,37 +239,16 @@ const filteredJobs = computed(() => {
   })
 })
 
-// Функции для тестовой панели
+// Функции для установки режимов были удалены, т.к. они создавали эффект автологина
+// Добавляем пустые функции, чтобы не было ошибок типизации
 function setEmployerMode() {
-  isLoggedIn.value = true
-  userType.value = 'employer'
-
-  // Сохраним режим в localStorage для тестирования
-  const testUser = {
-    userType: 'employer',
-    name: 'Test Employer',
-  }
-  localStorage.setItem('user', JSON.stringify(testUser))
-
-  console.log('Режим работодателя активирован')
-  // Перезагрузим страницу, чтобы применить изменения
-  window.location.reload()
+  // Функционал был удален
+  alert('Функция отключена')
 }
 
 function setWorkerMode() {
-  isLoggedIn.value = true
-  userType.value = 'worker'
-
-  // Сохраним режим в localStorage для тестирования
-  const testUser = {
-    userType: 'worker',
-    name: 'Test Worker',
-  }
-  localStorage.setItem('user', JSON.stringify(testUser))
-
-  console.log('Режим работника активирован')
-  // Перезагрузим страницу, чтобы применить изменения
-  window.location.reload()
+  // Функционал был удален
+  alert('Функция отключена')
 }
 
 function setCategory(category: string) {
@@ -556,16 +535,7 @@ const handleApply = (job: Job) => {
           сегодня
         </p>
 
-        <!-- Временная панель для тестирования (удалить в продакшн) -->
-        <div class="test-panel">
-          <div class="test-buttons">
-            <button class="test-btn" @click="setEmployerMode()">Режим работодателя</button>
-            <button class="test-btn" @click="setWorkerMode()">Режим работника</button>
-            <span class="test-status"
-              >Текущий режим: {{ isLoggedIn ? userType : 'Не авторизован' }}</span
-            >
-          </div>
-        </div>
+        <!-- Тестовая панель была удалена -->
 
         <div class="search-section">
           <div class="search-container">
@@ -1294,41 +1264,5 @@ textarea.form-control {
   color: var(--primary-color-dark);
 }
 
-/* Стили для тестовой панели */
-.test-panel {
-  margin: 10px 0;
-  padding: 10px;
-  background-color: #ffe9e9;
-  border-radius: 5px;
-  border: 1px dashed #ff6b6b;
-}
-
-.test-buttons {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.test-btn {
-  background-color: #ff6b6b;
-  color: white;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  transition: background-color 0.3s;
-}
-
-.test-btn:hover {
-  background-color: #ff5252;
-}
-
-.test-status {
-  font-weight: bold;
-  color: #333;
-  font-size: 0.9rem;
-}
+/* Стили для тестовой панели были удалены */
 </style>

@@ -13,6 +13,21 @@ onMounted(() => {
   // Инициализируем тему
   initTheme()
 
+  // Проверяем, если в localStorage сохранен тестовый пользователь Google, удаляем его
+  try {
+    const userData = localStorage.getItem('user')
+    if (userData) {
+      const user = JSON.parse(userData)
+      if (user.authProvider === 'google') {
+        // Если это тестовый пользователь Google, удаляем его из localStorage
+        localStorage.removeItem('user')
+        console.log('Тестовый пользователь Google был удален из localStorage')
+      }
+    }
+  } catch (error) {
+    console.error('Ошибка при проверке пользователя:', error)
+  }
+
   // Добавляем слушатель события изменения localStorage
   window.addEventListener('storage', handleStorageChange)
 })
