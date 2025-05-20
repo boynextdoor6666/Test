@@ -1,6 +1,208 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, reactive } from 'vue'
 
+// Текущий язык интерфейса
+const currentLanguage = ref('ru')
+
+// Словари переводов
+const translations = {
+  ru: {
+    profile: 'Профиль',
+    myJobs: 'Мои задания',
+    myVacancies: 'Мои вакансии',
+    availableJobs: 'Доступные вакансии',
+    applications: 'Заявки',
+    notifications: 'Уведомления',
+    personalData: 'Личные данные',
+    editProfile: 'Редактировать профиль',
+    addJob: 'Создать новую вакансию',
+    noJobs: 'Нет заданий, соответствующих выбранному фильтру',
+    jobDetails: 'Подробнее',
+    edit: 'Редактировать',
+    delete: 'Удалить',
+    apply: 'Откликнуться',
+    complete: 'Завершить',
+    cancelApplication: 'Отменить отклик',
+    allStatuses: 'Все',
+    newStatus: 'Новые',
+    inProgressStatus: 'В работе',
+    completedStatus: 'Завершенные',
+    name: 'ФИО',
+    phone: 'Телефон',
+    email: 'Email',
+    age: 'Возраст',
+    accountType: 'Тип аккаунта',
+    workerType: 'Работник',
+    employerType: 'Работодатель',
+    loginMethod: 'Способ входа',
+    hasOtherJob: 'У меня есть другая работа',
+    skills: 'Навыки',
+    experience: 'Опыт работы',
+    remarks: 'Примечания',
+    save: 'Сохранить',
+    cancel: 'Отмена',
+    all: 'Все',
+    search: 'Поиск по названию, описанию или локации...',
+    noAvailableJobs: 'Нет доступных вакансий в данный момент',
+    jobTitle: 'Название вакансии',
+    description: 'Описание',
+    salary: 'Зарплата',
+    location: 'Локация',
+    date: 'Дата',
+    category: 'Категория',
+    status: 'Статус',
+    addRemarks: 'Добавьте примечания',
+    required: '*',
+    totalApplications: 'Всего заявок',
+    applicants: 'Соискатели',
+    appliedAt: 'Откликнулся',
+    accept: 'Принять',
+    reject: 'Отклонить',
+    finishWork: 'Завершить работу',
+    changeLanguage: 'Тилди алмаштыруу (KG)', // Переключить на кыргызский
+  },
+  kg: {
+    profile: 'Профиль',
+    myJobs: 'Менин тапшырмаларым',
+    myVacancies: 'Менин вакансияларым',
+    availableJobs: 'Жеткиликтүү вакансиялар',
+    applications: 'Арыздар',
+    notifications: 'Билдирүүлөр',
+    personalData: 'Жеке маалыматтар',
+    editProfile: 'Профилди түзөтүү',
+    addJob: 'Жаңы вакансия түзүү',
+    noJobs: 'Тандалган чыпкага ылайык тапшырмалар жок',
+    jobDetails: 'Толугураак',
+    edit: 'Түзөтүү',
+    delete: 'Жок кылуу',
+    apply: 'Жооп берүү',
+    complete: 'Аяктоо',
+    cancelApplication: 'Арызды жокко чыгаруу',
+    allStatuses: 'Баары',
+    newStatus: 'Жаңы',
+    inProgressStatus: 'Иштөөдө',
+    completedStatus: 'Аякталган',
+    name: 'Аты-жөнү',
+    phone: 'Телефон',
+    email: 'Электрондук почта',
+    age: 'Жашы',
+    accountType: 'Аккаунт түрү',
+    workerType: 'Жумушчу',
+    employerType: 'Иш берүүчү',
+    loginMethod: 'Кирүү ыкмасы',
+    hasOtherJob: 'Менин башка жумушум бар',
+    skills: 'Көндүмдөр',
+    experience: 'Иш тажрыйбасы',
+    remarks: 'Эскертүүлөр',
+    save: 'Сактоо',
+    cancel: 'Жокко чыгаруу',
+    all: 'Баары',
+    search: 'Аталышы, сүрөттөмөсү же жайгашкан жери боюнча издөө...',
+    noAvailableJobs: 'Учурда жеткиликтүү вакансиялар жок',
+    jobTitle: 'Вакансиянын аталышы',
+    description: 'Сүрөттөмө',
+    salary: 'Айлык акы',
+    location: 'Жайгашкан жери',
+    date: 'Күнү',
+    category: 'Категория',
+    status: 'Статус',
+    addRemarks: 'Эскертүүлөрдү кошуңуз',
+    required: '*',
+    totalApplications: 'Жалпы арыздар',
+    applicants: 'Арыз ээлери',
+    appliedAt: 'Жооп берген',
+    accept: 'Кабыл алуу',
+    reject: 'Четке кагуу',
+    finishWork: 'Жумушту аяктоо',
+    changeLanguage: 'Сменить язык (RU)', // Переключить на русский
+  },
+} as const
+
+// Типы для переводов
+type TranslationLanguages = keyof typeof translations
+type TranslationKeys = keyof typeof translations.ru
+
+// Функция для получения перевода
+const t = (key: TranslationKeys): string => {
+  return translations[currentLanguage.value][key] || String(key)
+}
+
+// Функция для смены языка
+const switchLanguage = () => {
+  currentLanguage.value = currentLanguage.value === 'ru' ? 'kg' : 'ru'
+  // Сохраняем предпочтение в локальное хранилище
+  localStorage.setItem('preferredLanguage', currentLanguage.value)
+}
+
+// Загрузка сохраненного языка при монтировании компонента
+onMounted(() => {
+  // Загружаем предпочтительный язык из localStorage
+  const savedLanguage = localStorage.getItem('preferredLanguage')
+  if (savedLanguage && (savedLanguage === 'ru' || savedLanguage === 'kg')) {
+    currentLanguage.value = savedLanguage
+  }
+
+  // Загрузка данных пользователя
+  const userData = localStorage.getItem('user')
+  if (userData) {
+    try {
+      const parsedUser = JSON.parse(userData)
+      if (parsedUser.userType) {
+        userType.value = parsedUser.userType
+      }
+      user.value = {
+        fullName: parsedUser.fullName || parsedUser.name || 'Пользователь',
+        phone: parsedUser.phone || '',
+        email: parsedUser.email || '',
+        age: parsedUser.age || 0,
+        hasOtherJobs: parsedUser.hasOtherJobs !== undefined ? parsedUser.hasOtherJobs : false,
+        authProvider: parsedUser.authProvider || '',
+        skills: parsedUser.skills || [],
+        experience: parsedUser.experience || '',
+        avatar: parsedUser.avatar || '',
+        photo: parsedUser.photo || '',
+      }
+    } catch (e) {
+      console.error('Ошибка при загрузке данных пользователя:', e)
+    }
+  }
+
+  // Загрузка вакансий
+  const jobsData = localStorage.getItem('jobs')
+  if (jobsData) {
+    try {
+      const parsedJobs = JSON.parse(jobsData)
+      // Добавляем статус, если его нет (для совместимости со страницей Найти работу)
+      jobs.value = parsedJobs.map((job) => ({
+        ...job,
+        status: job.status || 'new',
+      }))
+    } catch (e) {
+      console.error('Ошибка при загрузке вакансий:', e)
+      jobs.value = defaultJobs
+    }
+  } else {
+    jobs.value = defaultJobs
+    localStorage.setItem('jobs', JSON.stringify(defaultJobs))
+  }
+
+  // Загрузка списка принятых вакансий для работника
+  const myJobsData = localStorage.getItem('myJobs')
+  if (myJobsData && userType.value === 'worker') {
+    try {
+      myJobs.value = JSON.parse(myJobsData)
+    } catch (e) {
+      console.error('Ошибка при загрузке принятых вакансий:', e)
+      myJobs.value = []
+    }
+  }
+
+  // Загружаем фото из пользовательских данных, если оно есть
+  if (user.value.photo) {
+    profilePhoto.preview = user.value.photo
+  }
+})
+
 // Тип пользователя и данные пользователя (будут загружены из localStorage)
 const userType = ref('worker')
 const user = ref({
@@ -78,68 +280,6 @@ const defaultJobs = [
 const jobs = ref([])
 // Мои принятые вакансии (для работников)
 const myJobs = ref([])
-
-// Загрузка данных пользователя и вакансий из localStorage
-onMounted(() => {
-  const userData = localStorage.getItem('user')
-  if (userData) {
-    try {
-      const parsedUser = JSON.parse(userData)
-      if (parsedUser.userType) {
-        userType.value = parsedUser.userType
-      }
-      user.value = {
-        fullName: parsedUser.fullName || parsedUser.name || 'Пользователь',
-        phone: parsedUser.phone || '',
-        email: parsedUser.email || '',
-        age: parsedUser.age || 0,
-        hasOtherJobs: parsedUser.hasOtherJobs !== undefined ? parsedUser.hasOtherJobs : false,
-        authProvider: parsedUser.authProvider || '',
-        skills: parsedUser.skills || [],
-        experience: parsedUser.experience || '',
-        avatar: parsedUser.avatar || '',
-        photo: parsedUser.photo || '',
-      }
-    } catch (e) {
-      console.error('Ошибка при загрузке данных пользователя:', e)
-    }
-  }
-
-  // Загрузка вакансий
-  const jobsData = localStorage.getItem('jobs')
-  if (jobsData) {
-    try {
-      const parsedJobs = JSON.parse(jobsData)
-      // Добавляем статус, если его нет (для совместимости со страницей Найти работу)
-      jobs.value = parsedJobs.map((job) => ({
-        ...job,
-        status: job.status || 'new',
-      }))
-    } catch (e) {
-      console.error('Ошибка при загрузке вакансий:', e)
-      jobs.value = defaultJobs
-    }
-  } else {
-    jobs.value = defaultJobs
-    localStorage.setItem('jobs', JSON.stringify(defaultJobs))
-  }
-
-  // Загрузка списка принятых вакансий для работника
-  const myJobsData = localStorage.getItem('myJobs')
-  if (myJobsData && userType.value === 'worker') {
-    try {
-      myJobs.value = JSON.parse(myJobsData)
-    } catch (e) {
-      console.error('Ошибка при загрузке принятых вакансий:', e)
-      myJobs.value = []
-    }
-  }
-
-  // Загружаем фото из пользовательских данных, если оно есть
-  if (user.value.photo) {
-    profilePhoto.preview = user.value.photo
-  }
-})
 
 // Активная вкладка в личном кабинете
 const activeTab = ref('profile')
@@ -566,6 +706,7 @@ const newJob = ref({
   location: '',
   phone: '',
   date: '',
+  remarks: '', // Adding remarks field
 })
 const editJob = ref({
   // Для редактирования существующей вакансии
@@ -578,6 +719,7 @@ const editJob = ref({
   date: '',
   status: 'new',
   category: 'Разное',
+  remarks: '', // Adding remarks field
 })
 const addJobErrors = ref({
   title: '',
@@ -586,6 +728,7 @@ const addJobErrors = ref({
   location: '',
   phone: '',
   date: '',
+  // No validation error for remarks as it's optional
 })
 const editJobErrors = ref({
   title: '',
@@ -726,6 +869,7 @@ const handleAddJob = () => {
     date: newJob.value.date,
     status: 'new',
     category: 'Разное', // Добавляем категорию для совместимости с JobsView
+    remarks: newJob.value.remarks || '', // Add remarks field
   }
   jobs.value.unshift(job)
   localStorage.setItem('jobs', JSON.stringify(jobs.value))
@@ -736,7 +880,12 @@ const handleAddJob = () => {
 <template>
   <div class="dashboard">
     <div class="container">
-      <h1 class="text-center">Личный кабинет</h1>
+      <div class="header-row">
+        <h1 class="dashboard-title">{{ userType === 'worker' ? t('profile') : t('profile') }}</h1>
+        <button @click="switchLanguage" class="lang-btn">
+          <i class="fas fa-language"></i> {{ t('changeLanguage') }}
+        </button>
+      </div>
 
       <div class="dashboard-tabs">
         <button
@@ -744,14 +893,14 @@ const handleAddJob = () => {
           :class="{ active: activeTab === 'profile' }"
           @click="setActiveTab('profile')"
         >
-          Профиль
+          {{ t('profile') }}
         </button>
         <button
           class="tab-btn"
           :class="{ active: activeTab === 'jobs' }"
           @click="setActiveTab('jobs')"
         >
-          {{ userType === 'worker' ? 'Мои задания' : 'Мои вакансии' }}
+          {{ userType === 'worker' ? t('myJobs') : t('myVacancies') }}
         </button>
         <button
           v-if="userType === 'worker'"
@@ -759,7 +908,7 @@ const handleAddJob = () => {
           :class="{ active: activeTab === 'available-jobs' }"
           @click="setActiveTab('available-jobs')"
         >
-          Доступные вакансии
+          {{ t('availableJobs') }}
         </button>
         <button
           v-if="userType === 'employer'"
@@ -767,14 +916,14 @@ const handleAddJob = () => {
           :class="{ active: activeTab === 'applications' }"
           @click="setActiveTab('applications')"
         >
-          Заявки
+          {{ t('applications') }}
         </button>
         <button
           class="tab-btn"
           :class="{ active: activeTab === 'notifications' }"
           @click="setActiveTab('notifications')"
         >
-          Уведомления
+          {{ t('notifications') }}
         </button>
       </div>
 
@@ -782,9 +931,9 @@ const handleAddJob = () => {
       <div class="tab-content" v-if="activeTab === 'profile'">
         <div class="profile-card">
           <div class="profile-header">
-            <h2>Личные данные</h2>
+            <h2>{{ t('personalData') }}</h2>
             <button @click="openEditProfileModal" class="btn btn-primary">
-              <i class="fas fa-edit"></i> Редактировать профиль
+              <i class="fas fa-edit"></i> {{ t('editProfile') }}
             </button>
           </div>
 
@@ -803,27 +952,27 @@ const handleAddJob = () => {
 
           <div class="profile-info">
             <div class="profile-field">
-              <span class="field-label">ФИО:</span>
+              <span class="field-label">{{ t('name') }}:</span>
               <span class="field-value">{{ user.fullName }}</span>
             </div>
 
             <div class="profile-field">
-              <span class="field-label">Телефон:</span>
+              <span class="field-label">{{ t('phone') }}:</span>
               <span class="field-value">{{ user.phone }}</span>
             </div>
 
             <div class="profile-field">
-              <span class="field-label">Email:</span>
+              <span class="field-label">{{ t('email') }}:</span>
               <span class="field-value">{{ user.email }}</span>
             </div>
 
             <div class="profile-field">
-              <span class="field-label">Возраст:</span>
+              <span class="field-label">{{ t('age') }}:</span>
               <span class="field-value">{{ user.age }} лет</span>
             </div>
 
             <div class="profile-field" v-if="userType === 'worker'">
-              <span class="field-label">Наличие другой работы:</span>
+              <span class="field-label">{{ t('hasOtherJob') }}:</span>
               <span class="field-value">{{ user.hasOtherJobs ? 'Да' : 'Нет' }}</span>
             </div>
 
@@ -831,7 +980,7 @@ const handleAddJob = () => {
               class="profile-field"
               v-if="userType === 'worker' && user.skills && user.skills.length > 0"
             >
-              <span class="field-label">Навыки:</span>
+              <span class="field-label">{{ t('skills') }}:</span>
               <span class="field-value">
                 <span v-for="(skill, index) in user.skills" :key="index" class="skill-tag">
                   {{ skill }}
@@ -840,19 +989,19 @@ const handleAddJob = () => {
             </div>
 
             <div class="profile-field" v-if="userType === 'worker' && user.experience">
-              <span class="field-label">Опыт работы:</span>
+              <span class="field-label">{{ t('experience') }}:</span>
               <span class="field-value">{{ user.experience }}</span>
             </div>
 
             <div class="profile-field">
-              <span class="field-label">Тип аккаунта:</span>
+              <span class="field-label">{{ t('accountType') }}:</span>
               <span class="field-value">{{
-                userType === 'worker' ? 'Работник' : 'Работодатель'
+                userType === 'worker' ? t('workerType') : t('employerType')
               }}</span>
             </div>
 
             <div class="profile-field" v-if="user.authProvider">
-              <span class="field-label">Способ входа:</span>
+              <span class="field-label">{{ t('loginMethod') }}:</span>
               <span class="field-value auth-provider">
                 <i :class="authProviderIcon" class="auth-icon"></i>
                 {{ authProviderName }}
@@ -865,7 +1014,7 @@ const handleAddJob = () => {
       <!-- Работы/Задания -->
       <div class="tab-content" v-else-if="activeTab === 'jobs'">
         <div class="jobs-filters">
-          <h2>{{ userType === 'worker' ? 'Мои задания' : 'Мои вакансии' }}</h2>
+          <h2>{{ userType === 'worker' ? t('myJobs') : t('myVacancies') }}</h2>
 
           <div class="status-filter">
             <button
@@ -873,41 +1022,41 @@ const handleAddJob = () => {
               :class="{ active: statusFilter === 'all' }"
               @click="setStatusFilter('all')"
             >
-              Все
+              {{ t('allStatuses') }}
             </button>
             <button
               class="filter-btn"
               :class="{ active: statusFilter === 'new' }"
               @click="setStatusFilter('new')"
             >
-              Новые
+              {{ t('newStatus') }}
             </button>
             <button
               class="filter-btn"
               :class="{ active: statusFilter === 'in-progress' }"
               @click="setStatusFilter('in-progress')"
             >
-              В работе
+              {{ t('inProgressStatus') }}
             </button>
             <button
               class="filter-btn"
               :class="{ active: statusFilter === 'completed' }"
               @click="setStatusFilter('completed')"
             >
-              Завершенные
+              {{ t('completedStatus') }}
             </button>
           </div>
 
           <div v-if="userType === 'employer'" class="mt-3">
             <button class="btn btn-primary" @click="openAddJobModal">
-              <i class="fas fa-plus"></i> Создать новую вакансию
+              <i class="fas fa-plus"></i> {{ t('addJob') }}
             </button>
           </div>
         </div>
 
         <div class="jobs-list mt-4">
           <div v-if="filteredJobs.length === 0" class="no-jobs">
-            <p>Нет заданий, соответствующих выбранному фильтру</p>
+            <p>{{ t('noJobs') }}</p>
           </div>
 
           <div v-else class="job-items">
@@ -941,42 +1090,48 @@ const handleAddJob = () => {
                   </div>
                   <div class="job-detail" v-if="userType === 'worker' && job.appliedAt">
                     <i class="fas fa-clock"></i>
-                    <span>Отклик: {{ formatDateTime(job.appliedAt) }}</span>
+                    <span>{{ t('appliedAt') }}: {{ formatDateTime(job.appliedAt) }}</span>
                   </div>
+                </div>
+
+                <!-- Add remarks display -->
+                <div class="job-remarks" v-if="job.remarks">
+                  <h4>{{ t('remarks') }}:</h4>
+                  <p>{{ job.remarks }}</p>
                 </div>
               </div>
 
               <div class="job-actions">
-                <button class="btn btn-primary">Подробнее</button>
+                <button class="btn btn-primary">{{ t('jobDetails') }}</button>
                 <button
                   class="btn btn-outline"
                   v-if="job.status === 'new' && userType === 'employer'"
                   @click="openEditJobModal(job)"
                 >
-                  <i class="fas fa-edit"></i> Редактировать
+                  <i class="fas fa-edit"></i> {{ t('edit') }}
                 </button>
                 <button
                   class="btn btn-danger"
                   v-if="job.status === 'new' && userType === 'employer'"
                   @click="handleDeleteJob(job.id)"
                 >
-                  <i class="fas fa-trash-alt"></i> Удалить
+                  <i class="fas fa-trash-alt"></i> {{ t('delete') }}
                 </button>
                 <button
                   class="btn btn-outline"
                   v-if="job.status === 'new' && userType === 'worker'"
                 >
-                  Откликнуться
+                  {{ t('apply') }}
                 </button>
                 <button class="btn btn-success" v-if="job.status === 'in-progress'">
-                  Завершить
+                  {{ t('complete') }}
                 </button>
                 <button
                   class="btn btn-danger"
                   v-if="userType === 'worker' && job.status === 'new'"
                   @click="cancelApplication(job.id)"
                 >
-                  <i class="fas fa-times"></i> Отменить отклик
+                  <i class="fas fa-times"></i> {{ t('cancelApplication') }}
                 </button>
               </div>
             </div>
@@ -1049,6 +1204,12 @@ const handleAddJob = () => {
                     <span>{{ job.category }}</span>
                   </div>
                 </div>
+
+                <!-- Add remarks display -->
+                <div class="job-remarks" v-if="job.remarks">
+                  <h4>Примечания:</h4>
+                  <p>{{ job.remarks }}</p>
+                </div>
               </div>
 
               <div class="job-actions">
@@ -1092,6 +1253,12 @@ const handleAddJob = () => {
                   <i class="fas fa-calendar-alt"></i>
                   <span>{{ formatDate(job.date) }}</span>
                 </div>
+              </div>
+
+              <!-- Add remarks display for applications section -->
+              <div class="job-remarks" v-if="job.remarks">
+                <h4>Примечания:</h4>
+                <p>{{ job.remarks }}</p>
               </div>
 
               <div class="applications-count">
@@ -1199,143 +1366,146 @@ const handleAddJob = () => {
     <div v-if="showEditProfileModal" class="modal-overlay">
       <div class="modal">
         <h2>Редактирование профиля</h2>
-        <form @submit.prevent="saveProfileChanges">
-          <!-- Добавляем блок для загрузки фото профиля -->
-          <div class="form-group profile-photo-upload">
-            <label>Фото профиля</label>
-            <div class="photo-upload-container">
-              <div class="photo-preview" :class="{ 'has-photo': profilePhoto.preview }">
-                <img
-                  v-if="profilePhoto.preview"
-                  :src="profilePhoto.preview"
-                  alt="Profile Preview"
-                />
-                <div v-else class="photo-placeholder">
-                  <i class="fas fa-user"></i>
+        <div class="modal-content">
+          <form @submit.prevent="saveProfileChanges">
+            <!-- Добавляем блок для загрузки фото профиля -->
+            <div class="form-group profile-photo-upload">
+              <label>Фото профиля</label>
+              <div class="photo-upload-container">
+                <div class="photo-preview" :class="{ 'has-photo': profilePhoto.preview }">
+                  <img
+                    v-if="profilePhoto.preview"
+                    :src="profilePhoto.preview"
+                    alt="Profile Preview"
+                  />
+                  <div v-else class="photo-placeholder">
+                    <i class="fas fa-user"></i>
+                  </div>
+
+                  <button
+                    v-if="profilePhoto.preview"
+                    type="button"
+                    class="remove-photo"
+                    @click="removePhoto"
+                  >
+                    <i class="fas fa-times"></i>
+                  </button>
                 </div>
 
-                <button
-                  v-if="profilePhoto.preview"
-                  type="button"
-                  class="remove-photo"
-                  @click="removePhoto"
-                >
-                  <i class="fas fa-times"></i>
-                </button>
-              </div>
-
-              <div class="photo-upload-controls">
-                <label for="photo-upload-edit" class="upload-btn">
-                  <i class="fas fa-camera"></i>
-                  {{ profilePhoto.preview ? 'Изменить фото' : 'Загрузить фото' }}
-                </label>
-                <input
-                  type="file"
-                  id="photo-upload-edit"
-                  accept="image/*"
-                  @change="handlePhotoChange"
-                  class="photo-input"
-                />
-                <p class="photo-hint">JPG, PNG, GIF. Макс. размер 5МБ</p>
-                <div v-if="profilePhoto.error" class="photo-error">
-                  {{ profilePhoto.error }}
+                <div class="photo-upload-controls">
+                  <label for="photo-upload-edit" class="upload-btn">
+                    <i class="fas fa-camera"></i>
+                    {{ profilePhoto.preview ? 'Изменить фото' : 'Загрузить фото' }}
+                  </label>
+                  <input
+                    type="file"
+                    id="photo-upload-edit"
+                    accept="image/*"
+                    @change="handlePhotoChange"
+                    class="photo-input"
+                  />
+                  <p class="photo-hint">JPG, PNG, GIF. Макс. размер 5МБ</p>
+                  <div v-if="profilePhoto.error" class="photo-error">
+                    {{ profilePhoto.error }}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div class="form-group">
-            <label for="fullName">ФИО *</label>
-            <input
-              type="text"
-              id="fullName"
-              v-model="editProfileData.fullName"
-              class="form-control"
-              :class="{ 'has-error': editProfileErrors.fullName }"
-            />
-            <div class="error-message" v-if="editProfileErrors.fullName">
-              {{ editProfileErrors.fullName }}
+            <div class="form-group">
+              <label for="fullName">ФИО *</label>
+              <input
+                type="text"
+                id="fullName"
+                v-model="editProfileData.fullName"
+                class="form-control"
+                :class="{ 'has-error': editProfileErrors.fullName }"
+              />
+              <div class="error-message" v-if="editProfileErrors.fullName">
+                {{ editProfileErrors.fullName }}
+              </div>
             </div>
-          </div>
 
-          <div class="form-group">
-            <label for="phone">Телефон *</label>
-            <input
-              type="tel"
-              id="phone"
-              v-model="editProfileData.phone"
-              class="form-control"
-              :class="{ 'has-error': editProfileErrors.phone }"
-            />
-            <div class="error-message" v-if="editProfileErrors.phone">
-              {{ editProfileErrors.phone }}
+            <div class="form-group">
+              <label for="phone">Телефон *</label>
+              <input
+                type="tel"
+                id="phone"
+                v-model="editProfileData.phone"
+                class="form-control"
+                :class="{ 'has-error': editProfileErrors.phone }"
+              />
+              <div class="error-message" v-if="editProfileErrors.phone">
+                {{ editProfileErrors.phone }}
+              </div>
             </div>
-          </div>
 
-          <div class="form-group">
-            <label for="email">Email *</label>
-            <input
-              type="email"
-              id="email"
-              v-model="editProfileData.email"
-              class="form-control"
-              :class="{ 'has-error': editProfileErrors.email }"
-            />
-            <div class="error-message" v-if="editProfileErrors.email">
-              {{ editProfileErrors.email }}
+            <div class="form-group">
+              <label for="email">Email *</label>
+              <input
+                type="email"
+                id="email"
+                v-model="editProfileData.email"
+                class="form-control"
+                :class="{ 'has-error': editProfileErrors.email }"
+              />
+              <div class="error-message" v-if="editProfileErrors.email">
+                {{ editProfileErrors.email }}
+              </div>
             </div>
-          </div>
 
-          <div class="form-group">
-            <label for="age">Возраст *</label>
-            <input
-              type="number"
-              id="age"
-              v-model="editProfileData.age"
-              class="form-control"
-              :class="{ 'has-error': editProfileErrors.age }"
-            />
-            <div class="error-message" v-if="editProfileErrors.age">
-              {{ editProfileErrors.age }}
+            <div class="form-group">
+              <label for="age">Возраст *</label>
+              <input
+                type="number"
+                id="age"
+                v-model="editProfileData.age"
+                class="form-control"
+                :class="{ 'has-error': editProfileErrors.age }"
+              />
+              <div class="error-message" v-if="editProfileErrors.age">
+                {{ editProfileErrors.age }}
+              </div>
             </div>
-          </div>
 
-          <div class="form-group" v-if="userType === 'worker'">
-            <label class="checkbox-label">
-              <input type="checkbox" v-model="editProfileData.hasOtherJobs" />
-              <span>У меня есть другая работа</span>
-            </label>
-          </div>
+            <div class="form-group" v-if="userType === 'worker'">
+              <label class="checkbox-label">
+                <input type="checkbox" v-model="editProfileData.hasOtherJobs" />
+                <span>У меня есть другая работа</span>
+              </label>
+            </div>
 
-          <div class="form-group" v-if="userType === 'worker'">
-            <label for="skills">Навыки (через запятую)</label>
-            <input
-              type="text"
-              id="skills"
-              v-model="editProfileData.skills"
-              class="form-control"
-              placeholder="Например: уборка, готовка, ремонт"
-            />
-          </div>
+            <div class="form-group" v-if="userType === 'worker'">
+              <label for="skills">Навыки (через запятую)</label>
+              <input
+                type="text"
+                id="skills"
+                v-model="editProfileData.skills"
+                class="form-control"
+                placeholder="Например: уборка, готовка, ремонт"
+              />
+            </div>
 
-          <div class="form-group" v-if="userType === 'worker'">
-            <label for="experience">Опыт работы</label>
-            <textarea
-              id="experience"
-              v-model="editProfileData.experience"
-              class="form-control"
-              rows="3"
-              placeholder="Расскажите о вашем опыте"
-            ></textarea>
-          </div>
-
-          <div class="modal-actions">
-            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
-            <button type="button" class="btn btn-outline" @click="closeEditProfileModal">
-              Отмена
-            </button>
-          </div>
-        </form>
+            <div class="form-group" v-if="userType === 'worker'">
+              <label for="experience">Опыт работы</label>
+              <textarea
+                id="experience"
+                v-model="editProfileData.experience"
+                class="form-control"
+                rows="3"
+                placeholder="Расскажите о вашем опыте"
+              ></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-primary" @click="saveProfileChanges">
+            Сохранить изменения
+          </button>
+          <button type="button" class="btn btn-outline" @click="closeEditProfileModal">
+            Отмена
+          </button>
+        </div>
       </div>
     </div>
 
@@ -1343,7 +1513,7 @@ const handleAddJob = () => {
     <div v-if="showAddJobModal" class="modal-overlay">
       <div class="modal">
         <h2>Добавить вакансию</h2>
-        <form @submit.prevent="handleAddJob">
+        <div class="modal-content">
           <div class="form-group">
             <label>Название вакансии *</label>
             <input
@@ -1407,11 +1577,20 @@ const handleAddJob = () => {
             />
             <div class="error-message" v-if="addJobErrors.date">{{ addJobErrors.date }}</div>
           </div>
-          <div class="modal-actions">
-            <button type="submit" class="btn btn-primary">Добавить</button>
-            <button type="button" class="btn btn-outline" @click="closeAddJobModal">Отмена</button>
+          <div class="form-group">
+            <label>Примечания</label>
+            <textarea
+              v-model="newJob.remarks"
+              class="form-control"
+              rows="3"
+              placeholder="Добавьте примечания"
+            ></textarea>
           </div>
-        </form>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-primary" @click="handleAddJob">Добавить</button>
+          <button type="button" class="btn btn-outline" @click="closeAddJobModal">Отмена</button>
+        </div>
       </div>
     </div>
 
@@ -1419,7 +1598,7 @@ const handleAddJob = () => {
     <div v-if="showEditJobModal" class="modal-overlay">
       <div class="modal">
         <h2>Редактировать вакансию</h2>
-        <form @submit.prevent="handleEditJob">
+        <div class="modal-content">
           <div class="form-group">
             <label for="editTitle">Название вакансии *</label>
             <input
@@ -1455,7 +1634,9 @@ const handleAddJob = () => {
               class="form-control"
               :class="{ 'has-error': editJobErrors.salary }"
             />
-            <div class="error-message" v-if="editJobErrors.salary">{{ editJobErrors.salary }}</div>
+            <div class="error-message" v-if="editJobErrors.salary">
+              {{ editJobErrors.salary }}
+            </div>
           </div>
 
           <div class="form-group">
@@ -1517,11 +1698,21 @@ const handleAddJob = () => {
             </select>
           </div>
 
-          <div class="modal-actions">
-            <button type="submit" class="btn btn-primary">Сохранить</button>
-            <button type="button" class="btn btn-outline" @click="closeEditJobModal">Отмена</button>
+          <div class="form-group">
+            <label for="editRemarks">Примечания</label>
+            <textarea
+              id="editRemarks"
+              v-model="editJob.remarks"
+              class="form-control"
+              rows="3"
+              placeholder="Добавьте примечания"
+            ></textarea>
           </div>
-        </form>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-primary" @click="handleEditJob">Сохранить</button>
+          <button type="button" class="btn btn-outline" @click="closeEditJobModal">Отмена</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1530,6 +1721,44 @@ const handleAddJob = () => {
 <style scoped>
 .dashboard {
   padding: var(--spacing-xl) 0;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+  position: relative;
+}
+
+.dashboard-title {
+  margin: 0;
+  text-align: center;
+  flex-grow: 1;
+}
+
+.lang-btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lang-btn:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.lang-btn i {
+  font-size: 16px;
 }
 
 .dashboard-tabs {
@@ -1899,36 +2128,67 @@ const handleAddJob = () => {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
+  width: 100%;
+  height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
-  z-index: 1000;
-  overflow-y: auto;
-  padding: 20px 0;
+  align-items: center;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 .modal {
   background: #fff;
   border-radius: var(--radius-lg);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
-  padding: 32px 28px;
-  max-width: 420px;
   width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
   position: relative;
-  margin: auto;
-  max-height: calc(100vh - 40px);
-  overflow-y: auto;
 }
 
 .modal h2 {
-  margin-top: 0;
-  margin-bottom: 24px;
+  margin: 0;
+  padding: 20px 20px 10px;
   color: var(--primary-color);
   font-family: var(--font-family-heading);
   font-weight: var(--font-weight-bold);
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 1;
+}
+
+.modal-content {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+  -webkit-overflow-scrolling: touch;
+}
+
+.modal-actions {
+  padding: 15px 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid var(--border-color);
+  background: white;
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+}
+
+@media (max-width: 600px) {
+  .modal {
+    max-width: 100%;
+    max-height: 85vh;
+    margin: 0;
+  }
 }
 
 .modal .form-group {
@@ -2365,5 +2625,29 @@ textarea.form-control {
     width: 100%;
     margin-top: 10px;
   }
+}
+
+/* Finally, add styles for the job remarks */
+.job-remarks {
+  margin-top: var(--spacing-md);
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--primary-color);
+}
+
+.job-remarks h4 {
+  font-size: 0.95rem;
+  margin-top: 0;
+  margin-bottom: 8px;
+  color: var(--text-color);
+  font-weight: var(--font-weight-medium);
+}
+
+.job-remarks p {
+  margin: 0;
+  color: var(--text-color);
+  font-size: 0.9rem;
+  white-space: pre-line;
 }
 </style>

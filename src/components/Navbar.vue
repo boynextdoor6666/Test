@@ -1,10 +1,25 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import LanguageSwitcher from './LanguageSwitcher.vue'
+import { useI18n, translate } from '../utils/i18n'
+import type { TranslationLanguages, TranslationKeys } from '../utils/i18n'
 
 const router = useRouter()
 const isMenuOpen = ref(false)
 const isAuthenticated = ref(false)
+const currentLanguage = ref<TranslationLanguages>('ru')
+
+// Загрузка текущего языка
+onMounted(() => {
+  const { currentLanguage: savedLanguage } = useI18n()
+  currentLanguage.value = savedLanguage
+})
+
+// Функция для получения перевода
+const t = (key: TranslationKeys): string => {
+  return translate(key, currentLanguage.value)
+}
 
 // Проверка статуса авторизации
 const checkAuth = () => {
@@ -55,35 +70,38 @@ const logout = () => {
 
       <div class="navbar-links" :class="{ 'is-active': isMenuOpen }">
         <router-link to="/about" class="nav-link">
-          <i class="fas fa-info-circle"></i> О нас
+          <i class="fas fa-info-circle"></i> {{ t('about') }}
         </router-link>
         <router-link to="/jobs" class="nav-link">
-          <i class="fas fa-briefcase"></i> Найти работу
+          <i class="fas fa-briefcase"></i> {{ t('findJob') }}
         </router-link>
 
         <!-- Ссылки для авторизованных пользователей -->
         <template v-if="isAuthenticated">
           <router-link to="/dashboard" class="nav-link">
-            <i class="fas fa-user-circle"></i> Личный кабинет
+            <i class="fas fa-user-circle"></i> {{ t('dashboard') }}
           </router-link>
           <a href="#" @click.prevent="logout" class="nav-link">
-            <i class="fas fa-sign-out-alt"></i> Выйти
+            <i class="fas fa-sign-out-alt"></i> {{ t('logout') }}
           </a>
         </template>
 
         <!-- Ссылки для неавторизованных пользователей -->
         <template v-else>
           <router-link to="/login" class="nav-link">
-            <i class="fas fa-sign-in-alt"></i> Войти
+            <i class="fas fa-sign-in-alt"></i> {{ t('login') }}
           </router-link>
           <router-link to="/register" class="nav-link btn-register">
-            <i class="fas fa-user-plus"></i> Регистрация
+            <i class="fas fa-user-plus"></i> {{ t('register') }}
           </router-link>
         </template>
 
         <a href="https://t.me/tezJumush" target="_blank" class="nav-link btn-telegram">
-          <i class="fab fa-telegram-plane"></i> Выложить работу
+          <i class="fab fa-telegram-plane"></i> {{ t('postJob') }}
         </a>
+
+        <!-- Добавляем переключатель языка -->
+        <LanguageSwitcher class="language-switcher" />
       </div>
     </div>
   </nav>
@@ -220,6 +238,10 @@ const logout = () => {
   box-shadow: 0 4px 12px rgba(0, 136, 204, 0.4);
 }
 
+.language-switcher {
+  margin-left: var(--spacing-sm);
+}
+
 .navbar-menu-toggle {
   display: none;
   flex-direction: column;
@@ -280,7 +302,8 @@ const logout = () => {
   }
 
   .btn-register,
-  .btn-telegram {
+  .btn-telegram,
+  .language-switcher {
     margin-top: var(--spacing-sm);
     text-align: center;
     margin-left: 0;

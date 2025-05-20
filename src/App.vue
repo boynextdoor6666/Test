@@ -1,5 +1,25 @@
 <script setup lang="ts">
 import Navbar from './components/Navbar.vue'
+import { ref, onMounted } from 'vue'
+import { useI18n, translate } from './utils/i18n'
+import type { TranslationLanguages, TranslationKeys } from './utils/i18n'
+
+// Текущий язык
+const currentLanguage = ref<TranslationLanguages>('ru')
+
+// Загрузка текущего языка
+onMounted(() => {
+  const { currentLanguage: savedLanguage } = useI18n()
+  currentLanguage.value = savedLanguage
+})
+
+// Функция для получения перевода
+const t = (key: TranslationKeys): string => {
+  return translate(key, currentLanguage.value)
+}
+
+// Получение текущего года
+const currentYear = new Date().getFullYear()
 </script>
 
 <template>
@@ -19,28 +39,28 @@ import Navbar from './components/Navbar.vue'
         </div>
 
         <div class="footer-section">
-          <h3 class="footer-heading">Навигация</h3>
+          <h3 class="footer-heading">{{ t('navigation') }}</h3>
           <ul class="footer-links">
             <li>
               <router-link to="/" class="footer-link">
-                <i class="fas fa-home"></i> Главная
+                <i class="fas fa-home"></i> {{ t('home') }}
               </router-link>
             </li>
             <li>
               <router-link to="/jobs" class="footer-link">
-                <i class="fas fa-briefcase"></i> Найти работу
+                <i class="fas fa-briefcase"></i> {{ t('findJob') }}
               </router-link>
             </li>
             <li>
               <router-link to="/about" class="footer-link">
-                <i class="fas fa-info-circle"></i> О нас
+                <i class="fas fa-info-circle"></i> {{ t('about') }}
               </router-link>
             </li>
           </ul>
         </div>
 
         <div class="footer-section">
-          <h3 class="footer-heading">Контакты</h3>
+          <h3 class="footer-heading">{{ t('contacts') }}</h3>
           <ul class="footer-links">
             <li>
               <a href="tel:+996551714547" class="footer-link">
@@ -62,7 +82,7 @@ import Navbar from './components/Navbar.vue'
         </div>
 
         <div class="footer-section">
-          <h3 class="footer-heading">Социальные сети</h3>
+          <h3 class="footer-heading">{{ t('socials') }}</h3>
           <div class="social-links">
             <a href="https://t.me/tezJumush" target="_blank" class="social-link">
               <i class="fab fa-telegram"></i> Telegram
@@ -80,16 +100,16 @@ import Navbar from './components/Navbar.vue'
 
       <div class="footer-bottom">
         <p class="copyright">
-          &copy; {{ new Date().getFullYear() }} <span class="tez-jumush-text">TEZ JUMUSH</span>. Все
-          права защищены.
+          &copy; {{ currentYear }} <span class="tez-jumush-text">TEZ JUMUSH</span>.
+          {{ t('copyright') }}.
         </p>
         <div class="footer-bottom-links">
           <a href="#" class="footer-link-small">
-            <i class="fas fa-file-alt"></i> Правила использования
+            <i class="fas fa-file-alt"></i> {{ t('termsOfUse') }}
           </a>
           <span class="footer-divider">|</span>
           <a href="#" class="footer-link-small">
-            <i class="fas fa-shield-alt"></i> Политика конфиденциальности
+            <i class="fas fa-shield-alt"></i> {{ t('privacyPolicy') }}
           </a>
         </div>
       </div>
