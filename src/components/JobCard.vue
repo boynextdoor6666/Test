@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 
 interface Job {
   id: number
@@ -22,6 +22,12 @@ const props = defineProps<{
 // Определяем события для родительского компонента
 const emit = defineEmits(['edit', 'delete', 'apply'])
 
+// Логирование для отладки
+onMounted(() => {
+  console.log('JobCard isEmployer:', props.isEmployer)
+  console.log('JobCard job:', props.job)
+})
+
 // Форматирование статуса
 function formatStatus(status: string): string {
   const statusMap: Record<string, string> = {
@@ -34,10 +40,12 @@ function formatStatus(status: string): string {
 
 // Обработчики событий
 function handleEdit() {
+  console.log('Edit button clicked for job:', props.job.id)
   emit('edit', props.job)
 }
 
 function handleDelete() {
+  console.log('Delete button clicked for job:', props.job.id)
   if (confirm('Вы уверены, что хотите удалить эту вакансию?')) {
     emit('delete', props.job.id)
   }
@@ -101,7 +109,7 @@ function formatDate(dateString: string): string {
           <i class="fas fa-info-circle"></i> Подробнее
         </router-link>
 
-        <template v-if="isEmployer && job.status === 'new'">
+        <template v-if="isEmployer">
           <button @click="handleEdit" class="btn btn-sm btn-outline">
             <i class="fas fa-edit"></i> Изменить
           </button>
@@ -111,7 +119,7 @@ function formatDate(dateString: string): string {
         </template>
 
         <button
-          v-if="!isEmployer && job.status === 'new'"
+          v-if="!isEmployer && !job.status"
           @click="handleApply"
           class="btn btn-sm btn-success"
         >

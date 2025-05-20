@@ -2,11 +2,63 @@
 import { ref, onMounted, computed } from 'vue'
 import JobCard from '@/components/JobCard.vue'
 
+// Определение интерфейса Job для типизации
+interface Job {
+  id: number
+  title: string
+  description: string
+  salary: string
+  location: string
+  phone: string
+  date: string
+  category: string
+  applications?: Application[]
+}
+
+interface Application {
+  applicantId: number
+  applicantName: string
+  appliedAt: string
+  status: string
+}
+
+interface User {
+  fullName?: string
+  name?: string
+  phone?: string
+  email?: string
+  skills?: string[]
+  experience?: string
+  userType?: string
+}
+
+interface JobFormErrors {
+  title: string
+  description: string
+  salary: string
+  location: string
+  phone: string
+  category: string
+  [key: string]: string // Индексированный тип для динамического доступа
+}
+
+interface JobForm {
+  id: number | null
+  title: string
+  description: string
+  salary: string
+  location: string
+  phone: string
+  category: string
+  date: string
+  [key: string]: string | number | null // Индексированный тип для динамического доступа
+}
+
 // Sample job data (in a real app, this would come from an API)
-const jobs = ref([])
+const jobs = ref<Job[]>([])
 
 // Загружать тестовые вакансии только если в localStorage ничего нет
-const defaultJobs = [
+const defaultJobs: Job[] = [
   {
     id: 1,
     title: 'Уборщица на 2 часа',
@@ -81,8 +133,9 @@ const userType = ref('')
 // Состояние для модального окна добавления вакансии
 const showAddJobModal = ref(false)
 const showEditJobModal = ref(false)
-const currentJobId = ref(null)
-const newJob = ref({
+const currentJobId = ref<number | null>(null)
+const newJob = ref<JobForm>({
+  id: null,
   title: '',
   description: '',
   salary: '',
@@ -91,7 +144,7 @@ const newJob = ref({
   category: 'Разное',
   date: new Date().toISOString().split('T')[0], // Текущая дата
 })
-const editJob = ref({
+const editJob = ref<JobForm>({
   // Для редактирования состояния модального окна
   id: null,
   title: '',
@@ -102,7 +155,7 @@ const editJob = ref({
   category: 'Разное',
   date: '',
 })
-const addJobErrors = ref({
+const addJobErrors = ref<JobFormErrors>({
   title: '',
   description: '',
   salary: '',
@@ -110,7 +163,7 @@ const addJobErrors = ref({
   phone: '',
   category: '',
 })
-const editJobErrors = ref({
+const editJobErrors = ref<JobFormErrors>({
   title: '',
   description: '',
   salary: '',
@@ -190,11 +243,33 @@ const filteredJobs = computed(() => {
 function setEmployerMode() {
   isLoggedIn.value = true
   userType.value = 'employer'
+
+  // Сохраним режим в localStorage для тестирования
+  const testUser = {
+    userType: 'employer',
+    name: 'Test Employer',
+  }
+  localStorage.setItem('user', JSON.stringify(testUser))
+
+  console.log('Режим работодателя активирован')
+  // Перезагрузим страницу, чтобы применить изменения
+  window.location.reload()
 }
 
 function setWorkerMode() {
   isLoggedIn.value = true
   userType.value = 'worker'
+
+  // Сохраним режим в localStorage для тестирования
+  const testUser = {
+    userType: 'worker',
+    name: 'Test Worker',
+  }
+  localStorage.setItem('user', JSON.stringify(testUser))
+
+  console.log('Режим работника активирован')
+  // Перезагрузим страницу, чтобы применить изменения
+  window.location.reload()
 }
 
 function setCategory(category: string) {
@@ -268,7 +343,7 @@ const handleAddJob = () => {
   if (!valid) return
 
   // Добавление вакансии
-  const job = {
+  const job: Job = {
     id: Date.now(),
     title: newJob.value.title,
     description: newJob.value.description,
@@ -292,7 +367,9 @@ const handleAddJob = () => {
 }
 
 // Функция для модального окна редактирования вакансии
-const openEditJobModal = (job) => {
+const openEditJobModal = (job: Job) => {
+  console.log('openEditJobModal вызван с job:', job)
+
   showAddJobModal.value = false // Закрываем модальное окно добавления, если оно открыто
   showEditJobModal.value = true
 
@@ -300,9 +377,14 @@ const openEditJobModal = (job) => {
   Object.keys(editJobErrors.value).forEach((key) => (editJobErrors.value[key] = ''))
 
   // Копирование данных редактируемой вакансии
-  editJob.value = { ...job }
+  // Исключаем applications из копирования, т.к. этого поля нет в JobForm
+  const { applications, ...jobData } = job
+  editJob.value = { ...jobData }
 
   currentJobId.value = job.id
+
+  console.log('editJob.value после заполнения:', editJob.value)
+  console.log('currentJobId.value после заполнения:', currentJobId.value)
 }
 
 const closeEditJobModal = () => {
@@ -345,7 +427,17 @@ const handleEditJob = () => {
   // Обновление вакансии в массиве
   const index = jobs.value.findIndex((job) => job.id === currentJobId.value)
   if (index !== -1) {
-    jobs.value[index] = { ...editJob.value }
+    // Получаем applications из текущей вакансии, если оно есть
+    const applications = jobs.value[index].applications || []
+
+    // Создаем новый объект Job из editJob
+    const updatedJob: Job = {
+      ...(editJob.value as JobForm),
+      id: currentJobId.value as number, // Приведение типа
+      applications,
+    }
+
+    jobs.value[index] = updatedJob
     localStorage.setItem('jobs', JSON.stringify(jobs.value))
     showEditJobModal.value = false
     currentJobId.value = null
@@ -353,16 +445,21 @@ const handleEditJob = () => {
 }
 
 // Функция для удаления вакансии
-const handleDeleteJob = (jobId) => {
+const handleDeleteJob = (jobId: number) => {
+  console.log('handleDeleteJob вызван с jobId:', jobId)
+
   const index = jobs.value.findIndex((job) => job.id === jobId)
+  console.log('Найден индекс для удаления:', index)
+
   if (index !== -1) {
     jobs.value.splice(index, 1)
     localStorage.setItem('jobs', JSON.stringify(jobs.value))
+    console.log('Вакансия удалена. Новое количество вакансий:', jobs.value.length)
   }
 }
 
 // Обработчик отклика на вакансию
-const handleApply = (job) => {
+const handleApply = (job: Job) => {
   if (!isLoggedIn.value) {
     alert('Для отклика на вакансию необходимо авторизоваться')
     return
@@ -375,12 +472,12 @@ const handleApply = (job) => {
 
   // Проверяем, не откликнулся ли уже пользователь на эту вакансию
   const myJobsData = localStorage.getItem('myJobs')
-  let myJobs = []
+  let myJobs: any[] = []
 
   if (myJobsData) {
     try {
       myJobs = JSON.parse(myJobsData)
-      const alreadyApplied = myJobs.some((myJob) => myJob.id === job.id)
+      const alreadyApplied = myJobs.some((myJob: any) => myJob.id === job.id)
 
       if (alreadyApplied) {
         alert(`Вы уже откликнулись на вакансию "${job.title}"`)
@@ -393,7 +490,7 @@ const handleApply = (job) => {
 
   // Получаем данные пользователя
   const userData = localStorage.getItem('user')
-  let user = {}
+  let user: User = {}
 
   if (userData) {
     try {
