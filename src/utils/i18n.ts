@@ -77,6 +77,77 @@ export const messages = {
     aboutTitle: 'О нас',
     aboutTeam: 'Наша команда',
     contactUs: 'Связаться с нами',
+    // JobsView additions
+    findJobOrEmployee: 'Найдите работу или исполнителя',
+    jobsPlatformDescription:
+      'Более 500 вакансий и 1000 исполнителей на нашей платформе, готовых приступить к работе сегодня',
+    addNewJob: 'Добавить вакансию',
+    jobsFound: 'Найдено вакансий',
+    searchTitle: 'Поиск',
+    resetFilters: 'сбросить все фильтры',
+    noJobsFound: 'Вакансии не найдены',
+    tryChangeSearch: 'Попробуйте изменить параметры поиска или',
+    addJobTitle: 'Добавить вакансию',
+    editJobTitle: 'Редактировать вакансию',
+    deleteConfirmation: 'Вы уверены, что хотите удалить эту вакансию?',
+    applicationCount: 'Заявок',
+    details: 'Подробнее',
+    modify: 'Изменить',
+    // JobsView with nested structure
+    jobs: {
+      header: {
+        title: 'Найдите работу или исполнителя',
+        subtitle:
+          'Более 500 вакансий и 1000 исполнителей на нашей платформе, готовых приступить к работе сегодня',
+      },
+      search: {
+        placeholder: 'Поиск по названию, описанию или локации...',
+      },
+      actions: {
+        addJob: 'Добавить вакансию',
+      },
+      filterInfo: {
+        jobsCount: 'Найдено вакансий',
+        searchQuery: 'Поиск',
+      },
+      noJobs: {
+        title: 'Вакансии не найдены',
+        text: 'Попробуйте изменить параметры поиска или',
+        resetBtn: 'сбросить все фильтры',
+      },
+      modal: {
+        addJobTitle: 'Добавить вакансию',
+        editJobTitle: 'Редактировать вакансию',
+        addJobBtn: 'Добавить',
+        editJobBtn: 'Сохранить',
+        cancelBtn: 'Отмена',
+      },
+      form: {
+        title: 'Название вакансии',
+        description: 'Описание',
+        salary: 'Зарплата',
+        location: 'Локация',
+        phone: 'Телефон',
+        category: 'Категория',
+        date: 'Дата',
+        salaryPlaceholder: 'Например: 1500 сом',
+        locationPlaceholder: 'Например: Бишкек, центр',
+        phonePlaceholder: '+996 XXX XXXXXX',
+      },
+    },
+    // Categories
+    categories: {
+      all: 'Все',
+      cleaning: 'Уборка',
+      construction: 'Строительство',
+      delivery: 'Доставка',
+      repair: 'Ремонт',
+      nanny: 'Няни',
+      other: 'Разное',
+    },
+    // Google Auth
+    loginWithGoogle: 'Войти с помощью Google',
+    registerWithGoogle: 'Зарегистрироваться с помощью Google',
   },
   kg: {
     profile: 'Профиль',
@@ -150,6 +221,77 @@ export const messages = {
     aboutTitle: 'Биз жөнүндө',
     aboutTeam: 'Биздин команда',
     contactUs: 'Байланышуу',
+    // JobsView additions
+    findJobOrEmployee: 'Жумуш же аткаруучу табыңыз',
+    jobsPlatformDescription:
+      'Биздин платформада 500дөн ашык вакансия жана 1000ден ашык аткаруучулар, бүгүн эле иштөөгө даяр',
+    addNewJob: 'Вакансия кошуу',
+    jobsFound: 'Табылган вакансиялар',
+    searchTitle: 'Издөө',
+    resetFilters: 'чыпкаларды тазалоо',
+    noJobsFound: 'Вакансиялар табылган жок',
+    tryChangeSearch: 'Издөө параметрлерин өзгөртүп көрүңүз же',
+    addJobTitle: 'Вакансия кошуу',
+    editJobTitle: 'Вакансияны түзөтүү',
+    deleteConfirmation: 'Бул вакансияны чындап эле жок кылгыңыз келеби?',
+    applicationCount: 'Арыздар',
+    details: 'Толугураак',
+    modify: 'Өзгөртүү',
+    // JobsView with nested structure
+    jobs: {
+      header: {
+        title: 'Жумуш же аткаруучу табыңыз',
+        subtitle:
+          'Биздин платформада 500дөн ашык вакансия жана 1000ден ашык аткаруuчулар, бүгүн эле иштөөгө даяр',
+      },
+      search: {
+        placeholder: 'Аталышы, сүрөттөмөсү же жайгашкан жери боюнча издөө...',
+      },
+      actions: {
+        addJob: 'Вакансия кошуу',
+      },
+      filterInfo: {
+        jobsCount: 'Табылган вакансиялар',
+        searchQuery: 'Издөө',
+      },
+      noJobs: {
+        title: 'Вакансиялар табылган жок',
+        text: 'Издөө параметрлерин өзгөртүп көрүңүз же',
+        resetBtn: 'чыпкаларды тазалоо',
+      },
+      modal: {
+        addJobTitle: 'Вакансия кошуу',
+        editJobTitle: 'Вакансияны түзөтүү',
+        addJobBtn: 'Кошуу',
+        editJobBtn: 'Сактоо',
+        cancelBtn: 'Жокко чыгаруу',
+      },
+      form: {
+        title: 'Вакансиянын аталышы',
+        description: 'Сүрөттөмө',
+        salary: 'Айлык акы',
+        location: 'Жайгашкан жери',
+        phone: 'Телефон',
+        category: 'Категория',
+        date: 'Күнү',
+        salaryPlaceholder: 'Мисалы: 1500 сом',
+        locationPlaceholder: 'Мисалы: Бишкек, борбор',
+        phonePlaceholder: '+996 XXX XXXXXX',
+      },
+    },
+    // Categories
+    categories: {
+      all: 'Баары',
+      cleaning: 'Тазалоо',
+      construction: 'Курулуш',
+      delivery: 'Жеткирүү',
+      repair: 'Оңдоо',
+      nanny: 'Бала багуу',
+      other: 'Башка',
+    },
+    // Google Auth
+    loginWithGoogle: 'Google менен кирүү',
+    registerWithGoogle: 'Google менен катталуу',
   },
 }
 

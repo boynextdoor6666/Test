@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import GoogleLoginButton from '@/components/GoogleLoginButton.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -65,7 +66,8 @@ function handleLogin() {
 
     // Ищем пользователя по email и паролю
     const foundUser = users.find(
-      (user) => user.email === loginForm.value.email && user.password === loginForm.value.password,
+      (user: any) =>
+        user.email === loginForm.value.email && user.password === loginForm.value.password,
     )
 
     if (foundUser) {
@@ -144,6 +146,14 @@ function handleRegister() {
             >
               Регистрация
             </button>
+          </div>
+
+          <!-- Google auth button -->
+          <div class="social-login">
+            <div class="divider">
+              <span>или</span>
+            </div>
+            <GoogleLoginButton />
           </div>
 
           <!-- Демо-аккаунты для тестирования -->
@@ -244,6 +254,33 @@ function handleRegister() {
 .login-actions button {
   flex: 1;
   padding: 12px;
+}
+
+.social-login {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin: 10px 0;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 15px 0;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.divider span {
+  padding: 0 10px;
+  color: var(--text-color-light);
+  font-size: 14px;
 }
 
 .demo-accounts {

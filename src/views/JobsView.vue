@@ -1,6 +1,10 @@
 ﻿<script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import JobCard from '@/components/JobCard.vue'
+import { useI18n } from 'vue-i18n'
+
+// Получаем доступ к переводам
+const { t, locale } = useI18n()
 
 // Определение интерфейса Job для типизации
 interface Job {
@@ -121,9 +125,29 @@ const defaultJobs: Job[] = [
   },
 ]
 
-const categories = ref(['Все', 'Уборка', 'Строительство', 'Доставка', 'Ремонт', 'Няни', 'Разное'])
+// Используем переводы для категорий
+const categoryKeys = ['all', 'cleaning', 'construction', 'delivery', 'repair', 'nanny', 'other']
+const categories = ref(categoryKeys.map((key) => t(`categories.${key}`)))
 
-const selectedCategory = ref('Все')
+// Карта для маппинга переведенных категорий на их ключи
+const categoryMap = computed(() => {
+  const map = new Map()
+  categoryKeys.forEach((key) => {
+    map.set(t(`categories.${key}`), key)
+  })
+  return map
+})
+
+// Обратная карта для сопоставления ключей с переведенными категориями
+const reverseCategoryMap = computed(() => {
+  const map = new Map()
+  categoryKeys.forEach((key) => {
+    map.set(key, t(`categories.${key}`))
+  })
+  return map
+})
+
+const selectedCategory = ref(t('categories.all'))
 const searchQuery = ref('')
 
 // Проверка, авторизован ли пользователь и его тип
@@ -141,7 +165,7 @@ const newJob = ref<JobForm>({
   salary: '',
   location: '',
   phone: '',
-  category: 'Разное',
+  category: t('categories.other'),
   date: new Date().toISOString().split('T')[0], // Текущая дата
 })
 const editJob = ref<JobForm>({
@@ -152,7 +176,7 @@ const editJob = ref<JobForm>({
   salary: '',
   location: '',
   phone: '',
-  category: 'Разное',
+  category: t('categories.other'),
   date: '',
 })
 const addJobErrors = ref<JobFormErrors>({
@@ -218,10 +242,32 @@ onMounted(() => {
   }
 })
 
+// Обновляем категории при изменении языка
+watch(locale, () => {
+  // Обновляем категории
+  categories.value = categoryKeys.map((key) => t(`categories.${key}`))
+  // Обновляем выбранную категорию
+  if (selectedCategory.value !== t('categories.all')) {
+    // Находим соответствующую категорию на новом языке
+    const oldCategory = selectedCategory.value
+    const oldKey = categoryMap.value.get(oldCategory)
+    if (oldKey) {
+      selectedCategory.value = t(`categories.${oldKey}`)
+    } else {
+      selectedCategory.value = t('categories.all')
+    }
+  } else {
+    selectedCategory.value = t('categories.all')
+  }
+})
+
 const filteredJobs = computed(() => {
   return jobs.value.filter((job) => {
     // Filter by category
-    if (selectedCategory.value !== 'Все' && job.category !== selectedCategory.value) {
+    if (
+      selectedCategory.value !== t('categories.all') &&
+      reverseCategoryMap.value.get(job.category) !== selectedCategory.value
+    ) {
       return false
     }
 
@@ -257,7 +303,7 @@ function setCategory(category: string) {
 
 // Функция для сброса всех фильтров
 function resetFilters() {
-  selectedCategory.value = 'Все'
+  selectedCategory.value = t('categories.all')
   searchQuery.value = ''
 }
 
@@ -529,10 +575,9 @@ const handleApply = (job: Job) => {
   <div class="jobs-view">
     <div class="container">
       <section class="jobs-header">
-        <h1 class="text-center">Найдите работу или исполнителя</h1>
+        <h1 class="text-center">{{ t('jobs.header.title') }}</h1>
         <p class="text-center subtitle">
-          Более 500 вакансий и 1000 исполнителей на нашей платформе, готовых приступить к работе
-          сегодня
+          {{ t('jobs.header.subtitle') }}
         </p>
 
         <!-- Тестовая панель была удалена -->
@@ -542,7 +587,7 @@ const handleApply = (job: Job) => {
             <input
               type="text"
               v-model="searchQuery"
-              placeholder="Поиск по названию, описанию или локации..."
+              :placeholder="t('jobs.search.placeholder')"
               class="search-input"
             />
             <button class="search-button">
@@ -567,21 +612,26 @@ const handleApply = (job: Job) => {
 
         <div class="jobs-actions" v-if="isLoggedIn && userType === 'employer'">
           <button @click="openAddJobModal" class="btn btn-primary add-job-btn">
-            <i class="fas fa-plus"></i> Добавить вакансию
+            <i class="fas fa-plus"></i> {{ t('jobs.actions.addJob') }}
           </button>
         </div>
       </section>
 
       <section class="jobs-results">
         <div class="jobs-filter-info">
-          <span class="jobs-count">Найдено вакансий: {{ filteredJobs.length }}</span>
-          <div class="active-filters" v-if="selectedCategory !== 'Все' || searchQuery">
-            <div class="filter-tag" v-if="selectedCategory !== 'Все'">
+          <span class="jobs-count"
+            >{{ t('jobs.filterInfo.jobsCount') }}: {{ filteredJobs.length }}</span
+          >
+          <div
+            class="active-filters"
+            v-if="selectedCategory !== t('categories.all') || searchQuery"
+          >
+            <div class="filter-tag" v-if="selectedCategory !== t('categories.all')">
               {{ selectedCategory }}
-              <button class="clear-filter" @click="setCategory('Все')">×</button>
+              <button class="clear-filter" @click="setCategory(t('categories.all'))">×</button>
             </div>
             <div class="filter-tag" v-if="searchQuery">
-              Поиск: {{ searchQuery }}
+              {{ t('jobs.filterInfo.searchQuery') }}: {{ searchQuery }}
               <button class="clear-filter" @click="searchQuery = ''">×</button>
             </div>
           </div>
@@ -601,10 +651,10 @@ const handleApply = (job: Job) => {
 
         <div v-if="filteredJobs.length === 0" class="no-jobs">
           <i class="fas fa-search job-icon"></i>
-          <h3>Вакансии не найдены</h3>
+          <h3>{{ t('jobs.noJobs.title') }}</h3>
           <p>
-            Попробуйте изменить параметры поиска или
-            <button class="reset-btn" @click="resetFilters">сбросить все фильтры</button>
+            {{ t('jobs.noJobs.text') }}
+            <button class="reset-btn" @click="resetFilters">{{ t('jobs.noJobs.resetBtn') }}</button>
           </p>
         </div>
       </section>
@@ -613,10 +663,10 @@ const handleApply = (job: Job) => {
     <!-- Модальное окно добавления вакансии -->
     <div v-if="showAddJobModal" class="modal-overlay">
       <div class="modal">
-        <h2>Добавить вакансию</h2>
+        <h2>{{ t('jobs.modal.addJobTitle') }}</h2>
         <form @submit.prevent="handleAddJob">
           <div class="form-group">
-            <label>Название вакансии *</label>
+            <label>{{ t('jobs.form.title') }} *</label>
             <input
               type="text"
               v-model="newJob.title"
@@ -626,7 +676,7 @@ const handleApply = (job: Job) => {
             <div class="error-message" v-if="addJobErrors.title">{{ addJobErrors.title }}</div>
           </div>
           <div class="form-group">
-            <label>Описание *</label>
+            <label>{{ t('jobs.form.description') }} *</label>
             <textarea
               v-model="newJob.description"
               class="form-control"
@@ -638,53 +688,53 @@ const handleApply = (job: Job) => {
             </div>
           </div>
           <div class="form-group">
-            <label>Зарплата *</label>
+            <label>{{ t('jobs.form.salary') }} *</label>
             <input
               type="text"
               v-model="newJob.salary"
               class="form-control"
               :class="{ 'has-error': addJobErrors.salary }"
-              placeholder="Например: 1500 сом"
+              :placeholder="t('jobs.form.salaryPlaceholder')"
             />
             <div class="error-message" v-if="addJobErrors.salary">{{ addJobErrors.salary }}</div>
           </div>
           <div class="form-group">
-            <label>Локация *</label>
+            <label>{{ t('jobs.form.location') }} *</label>
             <input
               type="text"
               v-model="newJob.location"
               class="form-control"
               :class="{ 'has-error': addJobErrors.location }"
-              placeholder="Например: Бишкек, центр"
+              :placeholder="t('jobs.form.locationPlaceholder')"
             />
             <div class="error-message" v-if="addJobErrors.location">
               {{ addJobErrors.location }}
             </div>
           </div>
           <div class="form-group">
-            <label>Телефон *</label>
+            <label>{{ t('jobs.form.phone') }} *</label>
             <input
               type="tel"
               v-model="newJob.phone"
               class="form-control"
               :class="{ 'has-error': addJobErrors.phone }"
-              placeholder="+996 XXX XXXXXX"
+              :placeholder="t('jobs.form.phonePlaceholder')"
             />
             <div class="error-message" v-if="addJobErrors.phone">{{ addJobErrors.phone }}</div>
           </div>
           <div class="form-group">
-            <label>Категория *</label>
+            <label>{{ t('jobs.form.category') }} *</label>
             <select
               v-model="newJob.category"
               class="form-control"
               :class="{ 'has-error': addJobErrors.category }"
             >
               <option
-                v-for="category in categories.filter((c) => c !== 'Все')"
+                v-for="category in categoryKeys.filter((c) => c !== 'all')"
                 :key="category"
-                :value="category"
+                :value="t(`categories.${category}`)"
               >
-                {{ category }}
+                {{ t(`categories.${category}`) }}
               </option>
             </select>
             <div class="error-message" v-if="addJobErrors.category">
@@ -692,12 +742,14 @@ const handleApply = (job: Job) => {
             </div>
           </div>
           <div class="form-group">
-            <label>Дата *</label>
+            <label>{{ t('jobs.form.date') }} *</label>
             <input type="date" v-model="newJob.date" class="form-control" />
           </div>
           <div class="modal-actions">
-            <button type="submit" class="btn btn-primary">Добавить</button>
-            <button type="button" class="btn btn-outline" @click="closeAddJobModal">Отмена</button>
+            <button type="submit" class="btn btn-primary">{{ t('jobs.modal.addJobBtn') }}</button>
+            <button type="button" class="btn btn-outline" @click="closeAddJobModal">
+              {{ t('jobs.modal.cancelBtn') }}
+            </button>
           </div>
         </form>
       </div>
@@ -706,10 +758,10 @@ const handleApply = (job: Job) => {
     <!-- Модальное окно редактирования вакансии -->
     <div v-if="showEditJobModal" class="modal-overlay">
       <div class="modal">
-        <h2>Редактировать вакансию</h2>
+        <h2>{{ t('jobs.modal.editJobTitle') }}</h2>
         <form @submit.prevent="handleEditJob">
           <div class="form-group">
-            <label>Название вакансии *</label>
+            <label>{{ t('jobs.form.title') }} *</label>
             <input
               type="text"
               v-model="editJob.title"
@@ -719,7 +771,7 @@ const handleApply = (job: Job) => {
             <div class="error-message" v-if="editJobErrors.title">{{ editJobErrors.title }}</div>
           </div>
           <div class="form-group">
-            <label>Описание *</label>
+            <label>{{ t('jobs.form.description') }} *</label>
             <textarea
               v-model="editJob.description"
               class="form-control"
@@ -731,53 +783,53 @@ const handleApply = (job: Job) => {
             </div>
           </div>
           <div class="form-group">
-            <label>Зарплата *</label>
+            <label>{{ t('jobs.form.salary') }} *</label>
             <input
               type="text"
               v-model="editJob.salary"
               class="form-control"
               :class="{ 'has-error': editJobErrors.salary }"
-              placeholder="Например: 1500 сом"
+              :placeholder="t('jobs.form.salaryPlaceholder')"
             />
             <div class="error-message" v-if="editJobErrors.salary">{{ editJobErrors.salary }}</div>
           </div>
           <div class="form-group">
-            <label>Локация *</label>
+            <label>{{ t('jobs.form.location') }} *</label>
             <input
               type="text"
               v-model="editJob.location"
               class="form-control"
               :class="{ 'has-error': editJobErrors.location }"
-              placeholder="Например: Бишкек, центр"
+              :placeholder="t('jobs.form.locationPlaceholder')"
             />
             <div class="error-message" v-if="editJobErrors.location">
               {{ editJobErrors.location }}
             </div>
           </div>
           <div class="form-group">
-            <label>Телефон *</label>
+            <label>{{ t('jobs.form.phone') }} *</label>
             <input
               type="tel"
               v-model="editJob.phone"
               class="form-control"
               :class="{ 'has-error': editJobErrors.phone }"
-              placeholder="+996 XXX XXXXXX"
+              :placeholder="t('jobs.form.phonePlaceholder')"
             />
             <div class="error-message" v-if="editJobErrors.phone">{{ editJobErrors.phone }}</div>
           </div>
           <div class="form-group">
-            <label>Категория *</label>
+            <label>{{ t('jobs.form.category') }} *</label>
             <select
               v-model="editJob.category"
               class="form-control"
               :class="{ 'has-error': editJobErrors.category }"
             >
               <option
-                v-for="category in categories.filter((c) => c !== 'Все')"
+                v-for="category in categoryKeys.filter((c) => c !== 'all')"
                 :key="category"
-                :value="category"
+                :value="t(`categories.${category}`)"
               >
-                {{ category }}
+                {{ t(`categories.${category}`) }}
               </option>
             </select>
             <div class="error-message" v-if="editJobErrors.category">
@@ -785,12 +837,14 @@ const handleApply = (job: Job) => {
             </div>
           </div>
           <div class="form-group">
-            <label>Дата *</label>
+            <label>{{ t('jobs.form.date') }} *</label>
             <input type="date" v-model="editJob.date" class="form-control" />
           </div>
           <div class="modal-actions">
-            <button type="submit" class="btn btn-primary">Сохранить</button>
-            <button type="button" class="btn btn-outline" @click="closeEditJobModal">Отмена</button>
+            <button type="submit" class="btn btn-primary">{{ t('jobs.modal.editJobBtn') }}</button>
+            <button type="button" class="btn btn-outline" @click="closeEditJobModal">
+              {{ t('jobs.modal.cancelBtn') }}
+            </button>
           </div>
         </form>
       </div>

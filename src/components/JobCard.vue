@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+// Get i18n instance for translations
+const { t } = useI18n()
 
 interface Job {
   id: number
@@ -31,9 +35,9 @@ onMounted(() => {
 // Форматирование статуса
 function formatStatus(status: string): string {
   const statusMap: Record<string, string> = {
-    new: 'Новое',
-    'in-progress': 'В работе',
-    completed: 'Завершено',
+    new: t('newStatus'),
+    'in-progress': t('inProgressStatus'),
+    completed: t('completedStatus'),
   }
   return statusMap[status] || status
 }
@@ -46,7 +50,7 @@ function handleEdit() {
 
 function handleDelete() {
   console.log('Delete button clicked for job:', props.job.id)
-  if (confirm('Вы уверены, что хотите удалить эту вакансию?')) {
+  if (confirm(t('deleteConfirmation'))) {
     emit('delete', props.job.id)
   }
 }
@@ -99,22 +103,22 @@ function formatDate(dateString: string): string {
       </div>
       <div class="job-applications" v-if="hasApplications && isEmployer">
         <i class="fas fa-user-check"></i>
-        <span>Заявок: {{ job.applications.length }}</span>
+        <span>{{ t('applicationCount') }}: {{ job.applications?.length }}</span>
       </div>
     </div>
 
     <div class="job-footer">
       <div class="job-actions">
         <router-link :to="`/jobs/${job.id}`" class="btn btn-sm btn-primary">
-          <i class="fas fa-info-circle"></i> Подробнее
+          <i class="fas fa-info-circle"></i> {{ t('details') }}
         </router-link>
 
         <template v-if="isEmployer">
           <button @click="handleEdit" class="btn btn-sm btn-outline">
-            <i class="fas fa-edit"></i> Изменить
+            <i class="fas fa-edit"></i> {{ t('modify') }}
           </button>
           <button @click="handleDelete" class="btn btn-sm btn-danger">
-            <i class="fas fa-trash-alt"></i> Удалить
+            <i class="fas fa-trash-alt"></i> {{ t('delete') }}
           </button>
         </template>
 
@@ -123,7 +127,7 @@ function formatDate(dateString: string): string {
           @click="handleApply"
           class="btn btn-sm btn-success"
         >
-          <i class="fas fa-check"></i> Откликнуться
+          <i class="fas fa-check"></i> {{ t('apply') }}
         </button>
       </div>
     </div>

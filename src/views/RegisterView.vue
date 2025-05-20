@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
+import GoogleLoginButton from '@/components/GoogleLoginButton.vue'
 
 const router = useRouter()
 
@@ -12,6 +13,7 @@ const formData = ref({
   password: '',
   confirmPassword: '',
   userType: 'worker',
+  termsAccepted: false,
 })
 
 // Фотография профиля
@@ -72,6 +74,7 @@ interface ValidationErrors {
   phone: string
   password: string
   confirmPassword: string
+  termsAccepted: string
 }
 
 // Валидация
@@ -81,6 +84,7 @@ const errors = ref<ValidationErrors>({
   phone: '',
   password: '',
   confirmPassword: '',
+  termsAccepted: '',
 })
 
 const isLoading = ref(false)
@@ -127,6 +131,11 @@ const handleSubmit = () => {
 
   if (formData.value.password !== formData.value.confirmPassword) {
     errors.value.confirmPassword = 'Пароли не совпадают'
+    isValid = false
+  }
+
+  if (!formData.value.termsAccepted) {
+    errors.value.termsAccepted = 'Пожалуйста, примите пользовательское соглашение'
     isValid = false
   }
 
@@ -331,14 +340,36 @@ const setUserType = (type: string) => {
             </div>
           </div>
 
-          <div class="register-actions">
+          <!-- Пользовательское соглашение -->
+          <div class="form-group checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" v-model="formData.termsAccepted" />
+              <span class="checkbox-text">
+                Я согласен с <a href="#" class="terms-link">условиями использования</a> и
+                <a href="#" class="terms-link">политикой конфиденциальности</a>
+              </span>
+            </label>
+            <div class="error-message" v-if="errors.termsAccepted">
+              {{ errors.termsAccepted }}
+            </div>
+          </div>
+
+          <div class="form-actions">
             <button type="submit" class="btn btn-primary" :disabled="isLoading">
               {{ isLoading ? 'Регистрация...' : 'Зарегистрироваться' }}
             </button>
+          </div>
 
-            <div class="login-link">
-              Уже есть аккаунт? <router-link to="/login">Войти</router-link>
+          <!-- Google auth button -->
+          <div class="social-login">
+            <div class="divider">
+              <span>или</span>
             </div>
+            <GoogleLoginButton />
+          </div>
+
+          <div class="login-link">
+            Уже есть аккаунт? <router-link to="/login">Войти</router-link>
           </div>
         </form>
       </div>
@@ -504,9 +535,66 @@ const setUserType = (type: string) => {
   margin-top: 8px;
 }
 
+.social-login {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin: 10px 0;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 15px 0;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.divider span {
+  padding: 0 10px;
+  color: var(--text-color-light);
+  font-size: 14px;
+}
+
 .form-group {
   display: flex;
   flex-direction: column;
+}
+
+.checkbox-group {
+  margin: 10px 0;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.checkbox-label input[type='checkbox'] {
+  margin-top: 3px;
+}
+
+.checkbox-text {
+  font-size: 14px;
+  color: var(--text-color);
+}
+
+.terms-link {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.terms-link:hover {
+  text-decoration: underline;
 }
 
 .form-group label {
@@ -542,7 +630,7 @@ const setUserType = (type: string) => {
   border-left: 3px solid var(--danger-color);
 }
 
-.register-actions {
+.form-actions {
   display: flex;
   flex-direction: column;
   gap: 16px;
