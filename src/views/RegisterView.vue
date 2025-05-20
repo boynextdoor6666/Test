@@ -4,23 +4,20 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-// Тип пользователя: работник или работодатель
-const userType = ref('worker') // по умолчанию - работник
-
 // Данные формы
 const formData = ref({
-  fullName: '',
-  age: '',
+  name: '',
+  email: '',
   phone: '',
-  hasOtherJobs: false,
   password: '',
   confirmPassword: '',
+  userType: 'worker',
 })
 
 // Типы ошибок валидации
 interface ValidationErrors {
-  fullName: string
-  age: string
+  name: string
+  email: string
   phone: string
   password: string
   confirmPassword: string
@@ -28,12 +25,14 @@ interface ValidationErrors {
 
 // Валидация
 const errors = ref<ValidationErrors>({
-  fullName: '',
-  age: '',
+  name: '',
+  email: '',
   phone: '',
   password: '',
   confirmPassword: '',
 })
+
+const isLoading = ref(false)
 
 // Обработка отправки формы
 const handleSubmit = () => {
@@ -46,20 +45,16 @@ const handleSubmit = () => {
   // Валидация полей
   let isValid = true
 
-  if (!formData.value.fullName) {
-    errors.value.fullName = 'Пожалуйста, введите ФИО'
+  if (!formData.value.name) {
+    errors.value.name = 'Пожалуйста, введите ваше имя'
     isValid = false
   }
 
-  if (!formData.value.age) {
-    errors.value.age = 'Пожалуйста, введите возраст'
+  if (!formData.value.email) {
+    errors.value.email = 'Пожалуйста, введите email'
     isValid = false
-  } else if (
-    isNaN(Number(formData.value.age)) ||
-    Number(formData.value.age) < 16 ||
-    Number(formData.value.age) > 100
-  ) {
-    errors.value.age = 'Пожалуйста, введите корректный возраст (от 16 до 100)'
+  } else if (!/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(formData.value.email)) {
+    errors.value.email = 'Пожалуйста, введите корректный email'
     isValid = false
   }
 
@@ -85,113 +80,115 @@ const handleSubmit = () => {
   }
 
   if (isValid) {
-    // Имитация успешной регистрации (в реальном приложении здесь будет запрос к API)
-    const user = {
-      fullName: formData.value.fullName,
-      age: formData.value.age,
-      phone: formData.value.phone,
-      hasOtherJobs: formData.value.hasOtherJobs,
-      userType: userType.value,
-    }
+    isLoading.value = true
 
-    // Сохраняем данные пользователя в localStorage
-    localStorage.setItem('user', JSON.stringify(user))
+    // Имитация запроса к API для регистрации
+    setTimeout(() => {
+      // Проверяем, не зарегистрирован ли уже пользователь с таким email
+      const usersData = localStorage.getItem('registeredUsers') || '[]'
+      const users = JSON.parse(usersData)
 
-    // Перенаправляем в личный кабинет
-    router.push('/dashboard')
+      const existingUser = users.find((user: any) => user.email === formData.value.email)
+
+      if (existingUser) {
+        errors.value.email = 'Пользователь с таким email уже существует'
+        isLoading.value = false
+        return
+      }
+
+      // Создаем нового пользователя
+      const newUser = {
+        name: formData.value.name,
+        email: formData.value.email,
+        phone: formData.value.phone,
+        password: formData.value.password,
+        userType: formData.value.userType,
+      }
+
+      // Добавляем пользователя в список зарегистрированных
+      users.push(newUser)
+      localStorage.setItem('registeredUsers', JSON.stringify(users))
+
+      // Создаем сессию пользователя
+      const sessionUser = {
+        name: newUser.name,
+        email: newUser.email,
+        phone: newUser.phone,
+        userType: newUser.userType,
+      }
+
+      // Сохраняем данные пользователя в localStorage
+      localStorage.setItem('user', JSON.stringify(sessionUser))
+
+      isLoading.value = false
+
+      // Перенаправляем на главную
+      router.push('/')
+    }, 500)
   }
-}
-
-// Вход через Telegram (имитация)
-const loginWithTelegram = () => {
-  // Имитация входа через Telegram (в реальном приложении здесь будет интеграция с Telegram API)
-  const user = {
-    phone: '+996777000000',
-    name: 'Telegram User',
-    userType: userType.value,
-    authProvider: 'telegram',
-  }
-
-  // Сохраняем данные пользователя в localStorage
-  localStorage.setItem('user', JSON.stringify(user))
-
-  // Перенаправляем в личный кабинет
-  router.push('/dashboard')
-}
-
-// Вход через Google (имитация)
-const registerWithGoogle = () => {
-  // Имитация регистрации через Google (в реальном приложении здесь будет интеграция с Google API)
-  const user = {
-    email: 'google.user@gmail.com',
-    name: 'Google User',
-    userType: userType.value,
-    authProvider: 'google',
-  }
-
-  // Сохраняем данные пользователя в localStorage
-  localStorage.setItem('user', JSON.stringify(user))
-
-  // Перенаправляем в личный кабинет
-  router.push('/dashboard')
 }
 
 // Переключение между типами пользователей
 const setUserType = (type: string) => {
-  userType.value = type
+  formData.value.userType = type
 }
 </script>
 
 <template>
-  <div class="register">
+  <div class="register-view">
     <div class="container">
-      <h1 class="text-center">Регистрация</h1>
+      <div class="register-container">
+        <div class="register-header">
+          <h1>Регистрация</h1>
+          <p>Создайте учетную запись для доступа к вакансиям</p>
+        </div>
 
-      <div class="user-type-selector">
-        <button
-          class="user-type-btn"
-          :class="{ active: userType === 'worker' }"
-          @click="setUserType('worker')"
-        >
-          Я ищу работу
-        </button>
-        <button
-          class="user-type-btn"
-          :class="{ active: userType === 'employer' }"
-          @click="setUserType('employer')"
-        >
-          Я ищу работников
-        </button>
-      </div>
+        <div class="user-type-selector">
+          <button
+            class="user-type-btn"
+            :class="{ active: formData.userType === 'worker' }"
+            @click="setUserType('worker')"
+          >
+            Я ищу работу
+          </button>
+          <button
+            class="user-type-btn"
+            :class="{ active: formData.userType === 'employer' }"
+            @click="setUserType('employer')"
+          >
+            Я ищу работников
+          </button>
+        </div>
 
-      <div class="register-form">
-        <form @submit.prevent="handleSubmit">
+        <form @submit.prevent="handleSubmit" class="register-form">
           <div class="form-group">
-            <label for="fullName">ФИО *</label>
+            <label for="name">Имя</label>
             <input
               type="text"
-              id="fullName"
-              v-model="formData.fullName"
+              id="name"
+              v-model="formData.name"
               class="form-control"
-              :class="{ 'has-error': errors.fullName }"
+              :class="{ 'has-error': errors.name }"
+              placeholder="Введите ваше имя"
             />
-            <div class="error-message" v-if="errors.fullName">{{ errors.fullName }}</div>
+            <div class="error-message" v-if="errors.name">{{ errors.name }}</div>
           </div>
 
           <div class="form-group">
-            <label for="age">Возраст *</label>
+            <label for="email">Email</label>
             <input
-              type="number"
-              id="age"
-              v-model="formData.age"
+              type="email"
+              id="email"
+              v-model="formData.email"
               class="form-control"
-              :class="{ 'has-error': errors.age }"
+              :class="{ 'has-error': errors.email }"
+              placeholder="Введите ваш email"
             />
-            <div class="error-message" v-if="errors.age">{{ errors.age }}</div>
+            <div class="error-message" v-if="errors.email">{{ errors.email }}</div>
           </div>
 
           <div class="form-group">
-            <label for="phone">Номер телефона *</label>
+            <label for="phone">Телефон</label>
             <input
               type="tel"
               id="phone"
@@ -203,56 +200,42 @@ const setUserType = (type: string) => {
             <div class="error-message" v-if="errors.phone">{{ errors.phone }}</div>
           </div>
 
-          <div class="form-group" v-if="userType === 'worker'">
-            <label class="checkbox-label">
-              <input type="checkbox" v-model="formData.hasOtherJobs" />
-              <span>У меня есть другая работа</span>
-            </label>
-          </div>
-
           <div class="form-group">
-            <label for="password">Пароль *</label>
+            <label for="password">Пароль</label>
             <input
               type="password"
               id="password"
               v-model="formData.password"
               class="form-control"
               :class="{ 'has-error': errors.password }"
+              placeholder="Минимум 6 символов"
             />
             <div class="error-message" v-if="errors.password">{{ errors.password }}</div>
           </div>
 
           <div class="form-group">
-            <label for="confirmPassword">Подтверждение пароля *</label>
+            <label for="confirmPassword">Подтверждение пароля</label>
             <input
               type="password"
               id="confirmPassword"
               v-model="formData.confirmPassword"
               class="form-control"
               :class="{ 'has-error': errors.confirmPassword }"
+              placeholder="Повторите пароль"
             />
             <div class="error-message" v-if="errors.confirmPassword">
               {{ errors.confirmPassword }}
             </div>
           </div>
 
-          <div class="form-group">
-            <button type="submit" class="btn btn-primary btn-block">Зарегистрироваться</button>
-          </div>
-
-          <div class="oauth-separator">или зарегистрируйтесь через</div>
-
-          <div class="oauth-options">
-            <button type="button" class="btn btn-telegram" @click="loginWithTelegram">
-              <i class="fab fa-telegram-plane"></i> Войти через Telegram
+          <div class="register-actions">
+            <button type="submit" class="btn btn-primary" :disabled="isLoading">
+              {{ isLoading ? 'Регистрация...' : 'Зарегистрироваться' }}
             </button>
-            <button type="button" class="btn btn-google" @click="registerWithGoogle">
-              <i class="fab fa-google"></i> Войти через Google
-            </button>
-          </div>
 
-          <div class="login-link">
-            Уже есть аккаунт? <router-link to="/login">Войти</router-link>
+            <div class="login-link">
+              Уже есть аккаунт? <router-link to="/login">Войти</router-link>
+            </div>
           </div>
         </form>
       </div>
@@ -261,74 +244,83 @@ const setUserType = (type: string) => {
 </template>
 
 <style scoped>
-.register {
-  padding: var(--spacing-xl) 0;
+.register-view {
+  min-height: calc(100vh - 200px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
 }
 
-h1 {
-  font-family: var(--font-family-heading);
-  font-weight: var(--font-weight-bold);
+.register-container {
+  max-width: 600px;
+  margin: 0 auto;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  padding: 40px;
+}
+
+.register-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.register-header h1 {
   color: var(--primary-color);
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: 10px;
+}
+
+.register-header p {
+  color: var(--text-color-light);
 }
 
 .user-type-selector {
   display: flex;
-  justify-content: center;
-  margin: var(--spacing-lg) 0 var(--spacing-xl);
-  gap: var(--spacing-md);
+  margin-bottom: 30px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
 }
 
 .user-type-btn {
-  padding: 14px 24px;
-  border: 2px solid var(--primary-color);
-  background-color: white;
-  color: var(--primary-color);
-  border-radius: var(--radius-md);
-  font-weight: var(--font-weight-bold);
-  font-family: var(--font-family-body);
+  flex: 1;
+  padding: 12px;
+  text-align: center;
+  background: white;
+  border: none;
   cursor: pointer;
   transition: all 0.3s;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  font-weight: 500;
 }
 
 .user-type-btn.active {
   background-color: var(--primary-color);
   color: white;
-  box-shadow: 0 4px 12px rgba(62, 104, 255, 0.25);
 }
 
 .register-form {
-  max-width: 500px;
-  margin: 0 auto;
-  background-color: white;
-  padding: var(--spacing-xl);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--card-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .form-group {
-  margin-bottom: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
 }
 
-label {
-  display: block;
-  margin-bottom: var(--spacing-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--text-secondary);
-  font-family: var(--font-family-body);
+.form-group label {
+  margin-bottom: 8px;
+  font-weight: 500;
 }
 
 .form-control {
-  width: 100%;
   padding: 12px 16px;
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
+  border-radius: 6px;
   font-size: 16px;
-  font-family: var(--font-family-body);
-  transition:
-    border-color 0.3s,
-    box-shadow 0.3s;
+  transition: border-color 0.3s;
 }
 
 .form-control:focus {
@@ -341,179 +333,64 @@ label {
   border-color: var(--danger-color);
 }
 
-.form-control.has-error:focus {
-  box-shadow: 0 0 0 3px rgba(239, 71, 111, 0.1);
-}
-
 .error-message {
   color: var(--danger-color);
   font-size: 14px;
-  margin-top: var(--spacing-xs);
-  font-family: var(--font-family-body);
+  padding: 8px 12px;
+  margin-top: 5px;
+  background-color: rgba(255, 0, 0, 0.05);
+  border-radius: 4px;
+  border-left: 3px solid var(--danger-color);
 }
 
-.checkbox-label {
+.register-actions {
   display: flex;
-  align-items: center;
-  font-weight: var(--font-weight-regular);
-  cursor: pointer;
-}
-
-.checkbox-label span {
-  margin-left: var(--spacing-sm);
-}
-
-input[type='checkbox'] {
-  width: 18px;
-  height: 18px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-}
-
-.btn-block {
-  width: 100%;
-  padding: 14px;
-  font-size: 16px;
-  font-weight: var(--font-weight-medium);
-  border-radius: var(--radius-md);
-  transition: all 0.3s ease;
-  margin-top: var(--spacing-md);
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 10px;
 }
 
 .btn-primary {
   background-color: var(--primary-color);
   color: white;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
   background-color: var(--primary-hover);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(62, 104, 255, 0.2);
 }
 
-.oauth-options {
-  margin: var(--spacing-md) 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
-}
-
-.oauth-separator {
-  text-align: center;
-  margin: var(--spacing-md) 0;
-  position: relative;
-  color: var(--text-light);
-  font-size: 14px;
-}
-
-.oauth-separator::before,
-.oauth-separator::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: calc(50% - 150px);
-  height: 1px;
-  background-color: var(--border-color);
-}
-
-.oauth-separator::before {
-  left: 0;
-}
-
-.oauth-separator::after {
-  right: 0;
-}
-
-.btn-telegram {
-  width: 100%;
-  background-color: #0088cc;
-  color: white;
-  border: none;
-  padding: 12px;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  cursor: pointer;
-  font-family: var(--font-family-body);
-  font-weight: var(--font-weight-medium);
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 6px rgba(0, 136, 204, 0.2);
-}
-
-.btn-telegram:hover {
-  background-color: #0077b3;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 136, 204, 0.3);
-}
-
-.btn-telegram i {
-  font-size: 1.25rem;
-}
-
-.btn-google {
-  width: 100%;
-  background-color: white;
-  color: #757575;
-  border: 1px solid #ddd;
-  padding: 12px;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  cursor: pointer;
-  font-family: var(--font-family-body);
-  font-weight: var(--font-weight-medium);
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.btn-google:hover {
-  background-color: #f8f8f8;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.btn-google i {
-  font-size: 1.25rem;
-  color: #4285f4;
+.btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .login-link {
   text-align: center;
-  margin-top: var(--spacing-md);
-  font-family: var(--font-family-body);
-  color: var(--text-secondary);
+  color: var(--text-color-light);
 }
 
 .login-link a {
   color: var(--primary-color);
-  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+  font-weight: 500;
 }
 
 .login-link a:hover {
   text-decoration: underline;
 }
 
-@media (max-width: 768px) {
-  .user-type-selector {
-    flex-direction: column;
-    margin: var(--spacing-md) 0 var(--spacing-lg);
-    padding: 0 var(--spacing-md);
-  }
-
-  .user-type-btn {
-    width: 100%;
-    text-align: center;
-  }
-
-  .register-form {
-    padding: var(--spacing-lg);
-    margin-left: var(--spacing-md);
-    margin-right: var(--spacing-md);
+@media (max-width: 600px) {
+  .register-container {
+    padding: 30px 20px;
+    margin: 0 20px;
   }
 }
 </style>

@@ -12,11 +12,13 @@ const router = createRouter({
       path: '/jobs',
       name: 'jobs',
       component: () => import('../views/JobsView.vue'),
+      meta: { requiresAuth: true },
     },
     {
       path: '/jobs/:id',
       name: 'job-details',
       component: () => import('../views/JobDetailView.vue'),
+      meta: { requiresAuth: true },
     },
     {
       path: '/about',
@@ -39,21 +41,30 @@ const router = createRouter({
       component: () => import('../views/DashboardView.vue'),
       meta: { requiresAuth: true },
     },
+    // Маршрут для перенаправления при попытке доступа к несуществующим страницам
+    {
+      path: '/:pathMatch(.*)*',
+      redirect: '/',
+    },
   ],
 })
 
-// Имитация проверки авторизации (в реальном приложении это будет работать с токенами)
+// Проверка авторизации для защищенных маршрутов
 router.beforeEach((to, from, next) => {
   // Если маршрут требует авторизации
   if (to.matched.some((record) => record.meta.requiresAuth)) {
-    // В реальном приложении здесь будет проверка наличия токена
+    // Проверяем наличие пользователя в localStorage
     const isAuthenticated = localStorage.getItem('user') !== null
 
     if (!isAuthenticated) {
-      // Перенаправляем на страницу входа
-      next({ name: 'login' })
+      // Если пользователь не авторизован, перенаправляем на страницу входа
+      next({
+        name: 'login',
+        // Сохраняем путь, на который пытался перейти пользователь
+        query: { redirect: to.fullPath },
+      })
     } else {
-      // Разрешаем доступ к маршруту
+      // Если пользователь авторизован, разрешаем доступ
       next()
     }
   } else {

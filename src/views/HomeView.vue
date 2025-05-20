@@ -1,6 +1,14 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import JobCard from '@/components/JobCard.vue'
+
+// Проверка авторизации
+const isLoggedIn = ref(false)
+
+onMounted(() => {
+  // Проверяем наличие пользователя в localStorage
+  isLoggedIn.value = localStorage.getItem('user') !== null
+})
 
 // Sample job data
 const recentJobs = ref([
@@ -57,6 +65,18 @@ const recentJobs = ref([
                 <i class="fab fa-telegram-plane"></i> Выложить работу
               </a>
             </div>
+
+            <!-- Информация для неавторизованных пользователей -->
+            <div v-if="!isLoggedIn" class="auth-notice">
+              <i class="fas fa-info-circle"></i>
+              <p>
+                Для доступа к вакансиям необходимо
+                <router-link to="/login" class="auth-link">войти</router-link>
+                или
+                <router-link to="/register" class="auth-link">зарегистрироваться</router-link>
+              </p>
+            </div>
+
             <div class="hero-stats">
               <div class="hero-stat">
                 <span class="hero-stat-number">500+</span>
@@ -316,10 +336,9 @@ const recentJobs = ref([
 
 .hero-wave {
   position: absolute;
-  bottom: -10px;
+  bottom: 0;
   left: 0;
   width: 100%;
-  height: 150px;
   overflow: hidden;
   line-height: 0;
 }
@@ -329,6 +348,42 @@ const recentJobs = ref([
   display: block;
   width: 100%;
   height: 150px;
+}
+
+.auth-notice {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  animation: fadeInUp 0.8s ease-out 0.6s both;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.auth-notice i {
+  font-size: 1.5rem;
+  color: var(--accent-color);
+}
+
+.auth-notice p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.auth-link {
+  color: var(--accent-color);
+  font-weight: var(--font-weight-bold);
+  text-decoration: underline;
+  transition: all 0.3s;
+}
+
+.auth-link:hover {
+  color: white;
+  text-decoration: none;
 }
 
 @keyframes fadeInUp {

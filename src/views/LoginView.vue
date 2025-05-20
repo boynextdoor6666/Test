@@ -1,117 +1,162 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
+const route = useRoute()
 
-// Данные формы
-const formData = ref({
-  phone: '',
+// Список предустановленных пользователей
+const registeredUsers = [
+  {
+    email: 'worker@example.com',
+    password: 'password123',
+    userType: 'worker',
+    name: 'Иван Рабочий',
+    phone: '+996 555 123456',
+  },
+  {
+    email: 'employer@example.com',
+    password: 'password123',
+    userType: 'employer',
+    name: 'Алексей Работодатель',
+    phone: '+996 700 654321',
+  },
+]
+
+const loginForm = ref({
+  email: '',
   password: '',
+  userType: 'worker', // По умолчанию "работник"
 })
 
-// Валидация
-const errors = ref({
-  phone: '',
-  password: '',
+const error = ref('')
+const isLoading = ref(false)
+const usersInitialized = ref(false)
+
+// Инициализация демо-пользователей при первом запуске
+onMounted(() => {
+  if (!usersInitialized.value) {
+    // Сначала проверим, есть ли уже пользователи в localStorage
+    const existingUsers = localStorage.getItem('registeredUsers')
+    if (!existingUsers) {
+      // Если нет, создаем демо-пользователей
+      localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers))
+    }
+    usersInitialized.value = true
+  }
 })
 
-// Обработка отправки формы
-const handleSubmit = () => {
-  // Сбросить ошибки
-  errors.value.phone = ''
-  errors.value.password = ''
+function handleLogin() {
+  isLoading.value = true
+  error.value = ''
 
-  // Валидация полей
-  let isValid = true
+  // Имитация запроса к API
+  setTimeout(() => {
+    isLoading.value = false
 
-  if (!formData.value.phone) {
-    errors.value.phone = 'Пожалуйста, введите номер телефона'
-    isValid = false
-  }
-
-  if (!formData.value.password) {
-    errors.value.password = 'Пожалуйста, введите пароль'
-    isValid = false
-  }
-
-  if (isValid) {
-    // Имитация успешного входа (в реальном приложении здесь будет запрос к API)
-    const user = {
-      phone: formData.value.phone,
-      name: 'Тестовый пользователь',
-      userType: 'worker', // или 'employer'
+    if (!loginForm.value.email || !loginForm.value.password) {
+      error.value = 'Пожалуйста, заполните все поля'
+      return
     }
 
-    // Сохраняем данные пользователя в localStorage
-    localStorage.setItem('user', JSON.stringify(user))
+    // Получаем список зарегистрированных пользователей
+    const usersData = localStorage.getItem('registeredUsers') || '[]'
+    const users = JSON.parse(usersData)
 
-    // Перенаправляем в личный кабинет
-    router.push('/dashboard')
-  }
+    // Ищем пользователя по email и паролю
+    const foundUser = users.find(
+      (user) => user.email === loginForm.value.email && user.password === loginForm.value.password,
+    )
+
+    if (foundUser) {
+      // Если пользователь найден, создаем сессию
+      const sessionUser = {
+        email: foundUser.email,
+        userType: foundUser.userType,
+        name: foundUser.name,
+        phone: foundUser.phone,
+      }
+
+      localStorage.setItem('user', JSON.stringify(sessionUser))
+
+      // Перенаправляем пользователя
+      const redirectPath = (route.query.redirect as string) || '/'
+      router.push(redirectPath)
+    } else {
+      // Если пользователь не найден, показываем ошибку
+      error.value = 'Неверный email или пароль'
+    }
+  }, 500)
 }
 
-// Вход через Telegram (имитация)
-const loginWithTelegram = () => {
-  // Имитация входа через Telegram (в реальном приложении здесь будет интеграция с Telegram API)
-  const user = {
-    phone: '+996777000000',
-    name: 'Telegram User',
-    userType: 'worker',
-  }
-
-  // Сохраняем данные пользователя в localStorage
-  localStorage.setItem('user', JSON.stringify(user))
-
-  // Перенаправляем в личный кабинет
-  router.push('/dashboard')
+function handleRegister() {
+  // Переход в режим регистрации
+  router.push('/register')
 }
 </script>
 
 <template>
-  <div class="login">
+  <div class="login-view">
     <div class="container">
-      <h1 class="text-center">Вход в аккаунт</h1>
+      <div class="login-container">
+        <div class="login-header">
+          <h1>Вход в систему</h1>
+          <p>Войдите в систему, чтобы получить доступ к вакансиям</p>
+        </div>
 
-      <div class="login-form">
-        <form @submit.prevent="handleSubmit">
+        <form @submit.prevent="handleLogin" class="login-form">
           <div class="form-group">
-            <label for="phone">Номер телефона *</label>
+            <label for="email">Email</label>
             <input
-              type="tel"
-              id="phone"
-              v-model="formData.phone"
+              type="email"
+              id="email"
+              v-model="loginForm.email"
               class="form-control"
-              :class="{ 'has-error': errors.phone }"
-              placeholder="+996 XXX XXXXXX"
+              placeholder="Введите ваш email"
+              required
             />
-            <div class="error-message" v-if="errors.phone">{{ errors.phone }}</div>
           </div>
 
           <div class="form-group">
-            <label for="password">Пароль *</label>
+            <label for="password">Пароль</label>
             <input
               type="password"
               id="password"
-              v-model="formData.password"
+              v-model="loginForm.password"
               class="form-control"
-              :class="{ 'has-error': errors.password }"
+              placeholder="Введите ваш пароль"
+              required
             />
-            <div class="error-message" v-if="errors.password">{{ errors.password }}</div>
           </div>
 
-          <div class="oauth-options">
-            <button type="button" class="btn btn-telegram" @click="loginWithTelegram">
-              <i class="icon-telegram"></i> Войти через Telegram
+          <div v-if="error" class="error-message">{{ error }}</div>
+
+          <div class="login-actions">
+            <button type="submit" class="btn btn-primary" :disabled="isLoading">
+              {{ isLoading ? 'Вход...' : 'Войти' }}
+            </button>
+
+            <button
+              type="button"
+              class="btn btn-outline"
+              @click="handleRegister"
+              :disabled="isLoading"
+            >
+              Регистрация
             </button>
           </div>
 
-          <div class="form-group">
-            <button type="submit" class="btn btn-primary btn-block">Войти</button>
-          </div>
-
-          <div class="register-link">
-            Нет аккаунта? <router-link to="/register">Зарегистрироваться</router-link>
+          <!-- Демо-аккаунты для тестирования -->
+          <div class="demo-accounts">
+            <div class="demo-accounts-title">Тестовые аккаунты:</div>
+            <div class="demo-account">
+              <div><strong>Работник:</strong> worker@example.com</div>
+              <div><strong>Пароль:</strong> password123</div>
+            </div>
+            <div class="demo-account">
+              <div><strong>Работодатель:</strong> employer@example.com</div>
+              <div><strong>Пароль:</strong> password123</div>
+            </div>
           </div>
         </form>
       </div>
@@ -120,78 +165,116 @@ const loginWithTelegram = () => {
 </template>
 
 <style scoped>
-.login {
+.login-view {
+  min-height: calc(100vh - 200px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 40px 0;
 }
 
-.login-form {
-  max-width: 400px;
-  margin: 30px auto 0;
+.login-container {
+  max-width: 500px;
+  margin: 0 auto;
   background-color: white;
-  padding: 30px;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  padding: 40px;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.login-header h1 {
+  color: var(--primary-color);
+  margin-bottom: 10px;
+}
+
+.login-header p {
+  color: var(--text-color-light);
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .form-group {
-  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
 }
 
-label {
-  display: block;
+.form-group label {
   margin-bottom: 8px;
   font-weight: 500;
 }
 
 .form-control {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
   font-size: 16px;
+  transition: border-color 0.3s;
 }
 
-.form-control.has-error {
-  border-color: #ff4d4f;
+.form-control:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(62, 104, 255, 0.1);
 }
 
 .error-message {
-  color: #ff4d4f;
+  color: var(--danger-color);
   font-size: 14px;
-  margin-top: 5px;
-}
-
-.btn-block {
-  width: 100%;
-  padding: 12px;
-  font-size: 16px;
-  margin-top: 15px;
-}
-
-.register-link {
-  text-align: center;
-  margin-top: 15px;
-}
-
-.oauth-options {
-  margin: 15px 0;
-}
-
-.btn-telegram {
-  width: 100%;
-  background-color: #0088cc;
-  color: white;
-  border: none;
-  padding: 12px;
+  padding: 8px 12px;
+  background-color: rgba(255, 0, 0, 0.05);
   border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  cursor: pointer;
+  border-left: 3px solid var(--danger-color);
 }
 
-.icon-telegram::before {
-  content: '✈️';
+.login-actions {
+  display: flex;
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.login-actions button {
+  flex: 1;
+  padding: 12px;
+}
+
+.demo-accounts {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px dashed var(--border-color);
+  font-size: 14px;
+}
+
+.demo-accounts-title {
+  text-align: center;
+  margin-bottom: 10px;
+  font-weight: 500;
+  color: var(--text-color-light);
+}
+
+.demo-account {
+  background-color: rgba(0, 0, 0, 0.02);
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 600px) {
+  .login-container {
+    padding: 30px 20px;
+    margin: 0 20px;
+  }
+
+  .login-actions {
+    flex-direction: column;
+  }
 }
 </style>
