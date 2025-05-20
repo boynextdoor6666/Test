@@ -1904,8 +1904,10 @@ const handleAddJob = () => {
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   z-index: 1000;
+  overflow-y: auto;
+  padding: 20px 0;
 }
 
 .modal {
@@ -1916,6 +1918,9 @@ const handleAddJob = () => {
   max-width: 420px;
   width: 100%;
   position: relative;
+  margin: auto;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
 }
 
 .modal h2 {
