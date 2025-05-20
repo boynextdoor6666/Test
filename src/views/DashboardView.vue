@@ -1,147 +1,65 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, reactive } from 'vue'
+import { useI18n } from 'vue-i18n'
 
-// Текущий язык интерфейса
-const currentLanguage = ref('ru')
+// Use the global i18n instance
+const { t } = useI18n()
 
-// Словари переводов
-const translations = {
-  ru: {
-    profile: 'Профиль',
-    myJobs: 'Мои задания',
-    myVacancies: 'Мои вакансии',
-    availableJobs: 'Доступные вакансии',
-    applications: 'Заявки',
-    notifications: 'Уведомления',
-    personalData: 'Личные данные',
-    editProfile: 'Редактировать профиль',
-    addJob: 'Создать новую вакансию',
-    noJobs: 'Нет заданий, соответствующих выбранному фильтру',
-    jobDetails: 'Подробнее',
-    edit: 'Редактировать',
-    delete: 'Удалить',
-    apply: 'Откликнуться',
-    complete: 'Завершить',
-    cancelApplication: 'Отменить отклик',
-    allStatuses: 'Все',
-    newStatus: 'Новые',
-    inProgressStatus: 'В работе',
-    completedStatus: 'Завершенные',
-    name: 'ФИО',
-    phone: 'Телефон',
-    email: 'Email',
-    age: 'Возраст',
-    accountType: 'Тип аккаунта',
-    workerType: 'Работник',
-    employerType: 'Работодатель',
-    loginMethod: 'Способ входа',
-    hasOtherJob: 'У меня есть другая работа',
-    skills: 'Навыки',
-    experience: 'Опыт работы',
-    remarks: 'Примечания',
-    save: 'Сохранить',
-    cancel: 'Отмена',
-    all: 'Все',
-    search: 'Поиск по названию, описанию или локации...',
-    noAvailableJobs: 'Нет доступных вакансий в данный момент',
-    jobTitle: 'Название вакансии',
-    description: 'Описание',
-    salary: 'Зарплата',
-    location: 'Локация',
-    date: 'Дата',
-    category: 'Категория',
-    status: 'Статус',
-    addRemarks: 'Добавьте примечания',
-    required: '*',
-    totalApplications: 'Всего заявок',
-    applicants: 'Соискатели',
-    appliedAt: 'Откликнулся',
-    accept: 'Принять',
-    reject: 'Отклонить',
-    finishWork: 'Завершить работу',
-    changeLanguage: 'Тилди алмаштыруу (KG)', // Переключить на кыргызский
-  },
-  kg: {
-    profile: 'Профиль',
-    myJobs: 'Менин тапшырмаларым',
-    myVacancies: 'Менин вакансияларым',
-    availableJobs: 'Жеткиликтүү вакансиялар',
-    applications: 'Арыздар',
-    notifications: 'Билдирүүлөр',
-    personalData: 'Жеке маалыматтар',
-    editProfile: 'Профилди түзөтүү',
-    addJob: 'Жаңы вакансия түзүү',
-    noJobs: 'Тандалган чыпкага ылайык тапшырмалар жок',
-    jobDetails: 'Толугураак',
-    edit: 'Түзөтүү',
-    delete: 'Жок кылуу',
-    apply: 'Жооп берүү',
-    complete: 'Аяктоо',
-    cancelApplication: 'Арызды жокко чыгаруу',
-    allStatuses: 'Баары',
-    newStatus: 'Жаңы',
-    inProgressStatus: 'Иштөөдө',
-    completedStatus: 'Аякталган',
-    name: 'Аты-жөнү',
-    phone: 'Телефон',
-    email: 'Электрондук почта',
-    age: 'Жашы',
-    accountType: 'Аккаунт түрү',
-    workerType: 'Жумушчу',
-    employerType: 'Иш берүүчү',
-    loginMethod: 'Кирүү ыкмасы',
-    hasOtherJob: 'Менин башка жумушум бар',
-    skills: 'Көндүмдөр',
-    experience: 'Иш тажрыйбасы',
-    remarks: 'Эскертүүлөр',
-    save: 'Сактоо',
-    cancel: 'Жокко чыгаруу',
-    all: 'Баары',
-    search: 'Аталышы, сүрөттөмөсү же жайгашкан жери боюнча издөө...',
-    noAvailableJobs: 'Учурда жеткиликтүү вакансиялар жок',
-    jobTitle: 'Вакансиянын аталышы',
-    description: 'Сүрөттөмө',
-    salary: 'Айлык акы',
-    location: 'Жайгашкан жери',
-    date: 'Күнү',
-    category: 'Категория',
-    status: 'Статус',
-    addRemarks: 'Эскертүүлөрдү кошуңуз',
-    required: '*',
-    totalApplications: 'Жалпы арыздар',
-    applicants: 'Арыз ээлери',
-    appliedAt: 'Жооп берген',
-    accept: 'Кабыл алуу',
-    reject: 'Четке кагуу',
-    finishWork: 'Жумушту аяктоо',
-    changeLanguage: 'Сменить язык (RU)', // Переключить на русский
-  },
-} as const
-
-// Типы для переводов
-type TranslationLanguages = keyof typeof translations
-type TranslationKeys = keyof typeof translations.ru
-
-// Функция для получения перевода
-const t = (key: TranslationKeys): string => {
-  return translations[currentLanguage.value][key] || String(key)
+// Define job interface
+interface Job {
+  id: number
+  title: string
+  description: string
+  salary: string
+  location: string
+  phone: string
+  date: string
+  status: string
+  category?: string
+  remarks?: string
+  applications?: Array<any>
+  appliedAt?: string
 }
 
-// Функция для смены языка
-const switchLanguage = () => {
-  currentLanguage.value = currentLanguage.value === 'ru' ? 'kg' : 'ru'
-  // Сохраняем предпочтение в локальное хранилище
-  localStorage.setItem('preferredLanguage', currentLanguage.value)
+// User interface definition
+interface User {
+  fullName: string
+  phone: string
+  email: string
+  age: number
+  hasOtherJobs: boolean
+  authProvider: string
+  skills: string[]
+  experience: string
+  avatar: string
+  photo: string
 }
+
+// Edit profile data and errors interfaces
+interface EditProfileData {
+  fullName: string
+  phone: string
+  email: string
+  age: number
+  hasOtherJobs: boolean
+  skills: string
+  experience: string
+}
+
+interface EditProfileErrors {
+  fullName: string
+  phone: string
+  email: string
+  age: string
+  [key: string]: string // Index signature
+}
+
+// Reference variables with proper types
+const jobs = ref<Job[]>([])
+const myJobs = ref<Job[]>([])
 
 // Загрузка сохраненного языка при монтировании компонента
 onMounted(() => {
-  // Загружаем предпочтительный язык из localStorage
-  const savedLanguage = localStorage.getItem('preferredLanguage')
-  if (savedLanguage && (savedLanguage === 'ru' || savedLanguage === 'kg')) {
-    currentLanguage.value = savedLanguage
-  }
-
   // Загрузка данных пользователя
   const userData = localStorage.getItem('user')
   if (userData) {
@@ -173,7 +91,7 @@ onMounted(() => {
     try {
       const parsedJobs = JSON.parse(jobsData)
       // Добавляем статус, если его нет (для совместимости со страницей Найти работу)
-      jobs.value = parsedJobs.map((job) => ({
+      jobs.value = parsedJobs.map((job: any) => ({
         ...job,
         status: job.status || 'new',
       }))
@@ -205,7 +123,7 @@ onMounted(() => {
 
 // Тип пользователя и данные пользователя (будут загружены из localStorage)
 const userType = ref('worker')
-const user = ref({
+const user = ref<User>({
   fullName: '',
   phone: '',
   email: '',
@@ -277,10 +195,6 @@ const defaultJobs = [
   },
 ]
 
-const jobs = ref([])
-// Мои принятые вакансии (для работников)
-const myJobs = ref([])
-
 // Активная вкладка в личном кабинете
 const activeTab = ref('profile')
 
@@ -337,23 +251,23 @@ const searchQueryAvailable = ref('')
 const categories = ref(['Все', 'Уборка', 'Строительство', 'Доставка', 'Ремонт', 'Няни', 'Разное'])
 
 // Изменить категорию для доступных вакансий
-const setAvailableCategory = (category) => {
+const setAvailableCategory = (category: string) => {
   selectedCategoryAvailable.value = category
 }
 
 // Изменить активную вкладку
-const setActiveTab = (tab) => {
+const setActiveTab = (tab: string) => {
   activeTab.value = tab
 }
 
 // Изменить фильтр статуса
-const setStatusFilter = (status) => {
+const setStatusFilter = (status: string) => {
   statusFilter.value = status
 }
 
 // Форматирование статуса
-const formatStatus = (status) => {
-  const statusMap = {
+const formatStatus = (status: string) => {
+  const statusMap: Record<string, string> = {
     new: 'Новое',
     'in-progress': 'В работе',
     completed: 'Завершено',
@@ -362,7 +276,7 @@ const formatStatus = (status) => {
 }
 
 // Форматирование даты
-const formatDate = (dateString) => {
+const formatDate = (dateString: string) => {
   const date = new Date(dateString)
   return date.toLocaleDateString('ru-RU')
 }
@@ -403,8 +317,8 @@ const hasApplications = computed(() => {
 })
 
 // Форматирование статуса заявки
-const formatApplicationStatus = (status) => {
-  const statusMap = {
+const formatApplicationStatus = (status: string) => {
+  const statusMap: Record<string, string> = {
     new: 'Новая',
     accepted: 'Принята',
     rejected: 'Отклонена',
@@ -414,7 +328,7 @@ const formatApplicationStatus = (status) => {
 }
 
 // Форматирование даты и времени
-const formatDateTime = (dateTimeString) => {
+const formatDateTime = (dateTimeString: string) => {
   if (!dateTimeString) return ''
 
   const date = new Date(dateTimeString)
@@ -580,7 +494,7 @@ const saveProfileChanges = () => {
 }
 
 // --- Функции для принятия вакансий (для работника) ---
-const applyForJob = (job) => {
+const applyForJob = (job: Job) => {
   // Проверяем, не откликался ли уже пользователь на эту вакансию
   const alreadyApplied = myJobs.value.some((myJob) => myJob.id === job.id)
   if (alreadyApplied) {
@@ -630,7 +544,7 @@ const applyForJob = (job) => {
 }
 
 // Добавим функции для управления статусом заявок для работодателя
-const updateApplicationStatus = (jobId, applicantId, newStatus) => {
+const updateApplicationStatus = (jobId: number, applicantId: number, newStatus: string) => {
   // Обновляем статус заявки в общем списке вакансий
   const jobIndex = jobs.value.findIndex((job) => job.id === jobId)
 
@@ -653,7 +567,7 @@ const updateApplicationStatus = (jobId, applicantId, newStatus) => {
 }
 
 // Функция для отмены отклика на вакансию (для работника)
-const cancelApplication = (jobId) => {
+const cancelApplication = (jobId: number) => {
   if (confirm('Вы уверены, что хотите отменить отклик на эту вакансию?')) {
     // Удаляем из списка принятых вакансий
     const jobIndex = myJobs.value.findIndex((job) => job.id === jobId)
@@ -677,7 +591,7 @@ const cancelApplication = (jobId) => {
 }
 
 // --- Функции для изменения статуса вакансии ---
-const changeJobStatus = (jobId, newStatus) => {
+const changeJobStatus = (jobId: number, newStatus: string) => {
   // Обновляем статус в списке всех вакансий
   const jobIndex = jobs.value.findIndex((job) => job.id === jobId)
   if (jobIndex !== -1) {
@@ -882,9 +796,6 @@ const handleAddJob = () => {
     <div class="container">
       <div class="header-row">
         <h1 class="dashboard-title">{{ userType === 'worker' ? t('profile') : t('profile') }}</h1>
-        <button @click="switchLanguage" class="lang-btn">
-          <i class="fas fa-language"></i> {{ t('changeLanguage') }}
-        </button>
       </div>
 
       <div class="dashboard-tabs">
@@ -1737,30 +1648,6 @@ const handleAddJob = () => {
   flex-grow: 1;
 }
 
-.lang-btn {
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: var(--radius-md);
-  padding: 8px 16px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.3s;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.lang-btn:hover {
-  background-color: var(--primary-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.lang-btn i {
-  font-size: 16px;
-}
-
 .dashboard-tabs {
   display: flex;
   justify-content: center;
@@ -1781,10 +1668,21 @@ const handleAddJob = () => {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
+[data-theme='dark'] .tab-btn {
+  color: #000000;
+  font-weight: var(--font-weight-bold);
+}
+
 .tab-btn.active {
   background-color: var(--primary-color);
   color: white;
   box-shadow: 0 4px 12px rgba(62, 104, 255, 0.25);
+}
+
+[data-theme='dark'] .tab-btn.active {
+  background-color: var(--primary-hover);
+  box-shadow: 0 4px 15px rgba(91, 127, 255, 0.4);
+  color: #000000;
 }
 
 .tab-content {
@@ -1792,6 +1690,11 @@ const handleAddJob = () => {
   border-radius: var(--radius-lg);
   box-shadow: var(--card-shadow);
   padding: var(--spacing-xl);
+}
+
+[data-theme='dark'] .tab-content {
+  background-color: var(--card-bg);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 /* Профиль */
@@ -1856,9 +1759,18 @@ const handleAddJob = () => {
   min-width: 180px;
 }
 
+[data-theme='dark'] .field-label {
+  color: #a1c3ff;
+}
+
 .field-value {
   font-weight: var(--font-weight-medium);
   color: var(--text-color);
+}
+
+[data-theme='dark'] .field-value {
+  color: #ffffff;
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
 }
 
 .auth-provider {
@@ -1918,6 +1830,12 @@ const handleAddJob = () => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   transition: all 0.3s;
   background-color: white;
+}
+
+[data-theme='dark'] .job-item {
+  background-color: var(--card-bg);
+  border-color: #444;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .job-item:hover {
@@ -1985,6 +1903,10 @@ const handleAddJob = () => {
   font-size: 0.9rem;
   color: var(--text-secondary);
   font-family: var(--font-family-body);
+}
+
+[data-theme='dark'] .job-detail {
+  color: #b8c7e0;
 }
 
 .job-actions {
@@ -2096,10 +2018,18 @@ const handleAddJob = () => {
   color: var(--text-color);
 }
 
+[data-theme='dark'] .notification-text {
+  color: #000000;
+}
+
 .notification-date {
   font-size: 0.85rem;
   color: var(--text-light);
   font-family: var(--font-family-body);
+}
+
+[data-theme='dark'] .notification-date {
+  color: #000000;
 }
 
 .icon-info::before {
@@ -2247,6 +2177,11 @@ const handleAddJob = () => {
   font-size: 0.85rem;
   margin-right: 5px;
   margin-bottom: 5px;
+}
+
+[data-theme='dark'] .skill-tag {
+  background-color: #5b7fff;
+  box-shadow: 0 0 4px rgba(91, 127, 255, 0.5);
 }
 
 textarea.form-control {
@@ -2634,6 +2569,11 @@ textarea.form-control {
   background-color: #f8f9fa;
   border-radius: var(--radius-md);
   border-left: 3px solid var(--primary-color);
+}
+
+[data-theme='dark'] .job-remarks {
+  background-color: #2d313a;
+  border-left: 3px solid var(--primary-hover);
 }
 
 .job-remarks h4 {

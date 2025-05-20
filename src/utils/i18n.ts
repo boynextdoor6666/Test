@@ -1,9 +1,10 @@
+import { createI18n } from 'vue-i18n'
+
 // Типы для переводов
 export type TranslationLanguages = 'ru' | 'kg'
-export type TranslationKeys = keyof typeof translations.ru
 
 // Словари переводов
-export const translations = {
+export const messages = {
   ru: {
     profile: 'Профиль',
     myJobs: 'Мои задания',
@@ -72,6 +73,10 @@ export const translations = {
     copyright: 'Все права защищены',
     termsOfUse: 'Правила использования',
     privacyPolicy: 'Политика конфиденциальности',
+    // About page
+    aboutTitle: 'О нас',
+    aboutTeam: 'Наша команда',
+    contactUs: 'Связаться с нами',
   },
   kg: {
     profile: 'Профиль',
@@ -134,38 +139,46 @@ export const translations = {
     login: 'Кирүү',
     register: 'Каттоо',
     postJob: 'Жумуш жарыялоо',
-    naviation: 'Навигация',
+    navigation: 'Навигация',
     home: 'Башкы бет',
     contacts: 'Байланыштар',
     socials: 'Социалдык тармактар',
     copyright: 'Бардык укуктар корголгон',
     termsOfUse: 'Колдонуу эрежелери',
     privacyPolicy: 'Купуялуулуk саясаты',
+    // About page
+    aboutTitle: 'Биз жөнүндө',
+    aboutTeam: 'Биздин команда',
+    contactUs: 'Байланышуу',
   },
 }
 
-// Загрузка текущего языка из localStorage, по умолчанию русский
-const getSavedLanguage = (): TranslationLanguages => {
+// Получаем сохраненный язык из localStorage или используем русский по умолчанию
+function getLocale(): string {
   const savedLanguage = localStorage.getItem('preferredLanguage')
   return savedLanguage === 'ru' || savedLanguage === 'kg' ? savedLanguage : 'ru'
 }
 
-// Функция для изменения языка
-export const switchLanguage = (currentLanguage: TranslationLanguages): TranslationLanguages => {
-  const newLanguage = currentLanguage === 'ru' ? 'kg' : 'ru'
-  localStorage.setItem('preferredLanguage', newLanguage)
-  return newLanguage
+// Создаем экземпляр i18n
+export const i18n = createI18n({
+  legacy: false, // Возвращаем обратно режим Composition API
+  globalInjection: true, // Устанавливаем глобальные свойства для всех компонентов
+  locale: getLocale(), // устанавливаем текущий язык
+  fallbackLocale: 'ru', // запасной язык
+  messages, // словари переводов
+})
+
+// Функция для переключения языка
+export function switchLanguage() {
+  // Приведение типов нужно из-за особенностей TypeScript
+  const i18nGlobal = i18n.global as any
+  const currentLocale = i18nGlobal.locale.value
+  const newLocale = currentLocale === 'ru' ? 'kg' : 'ru'
+
+  // Устанавливаем новый язык
+  i18nGlobal.locale.value = newLocale
+  localStorage.setItem('preferredLanguage', newLocale)
 }
 
-// Функция для получения перевода
-export const translate = (key: TranslationKeys, language: TranslationLanguages): string => {
-  return translations[language][key] || String(key)
-}
-
-export const useI18n = () => {
-  return {
-    currentLanguage: getSavedLanguage(),
-    translate,
-    switchLanguage,
-  }
-}
+// Экспортируем тип ключей перевода
+export type TranslationKeys = keyof typeof messages.ru

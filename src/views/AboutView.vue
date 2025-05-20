@@ -1,8 +1,15 @@
+<script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+// Use the global i18n instance
+const { t } = useI18n()
+</script>
+
 <template>
   <div class="about">
     <section class="section">
       <div class="container">
-        <h1 class="text-center">О нас</h1>
+        <h1 class="text-center">{{ t('aboutTitle') }}</h1>
         <div class="about-content mt-5">
           <div class="about-image">
             <img src="/img/logo.jpg" alt="Tez Jumush" width="200" />
@@ -48,14 +55,14 @@
 
     <section class="section team-section">
       <div class="container">
-        <h2 class="text-center">Наша команда</h2>
+        <h2 class="text-center">{{ t('aboutTeam') }}</h2>
         <p class="text-center">
           Tez Jumush - это проект, созданный энтузиастами, которые хотят сделать рынок труда более
           доступным и эффективным.
         </p>
 
         <div class="contact-us mt-5 text-center">
-          <h3>Связаться с нами</h3>
+          <h3>{{ t('contactUs') }}</h3>
           <p>Если у вас есть вопросы или предложения, пожалуйста, свяжитесь с нами:</p>
           <a href="https://t.me/tezJumush" target="_blank" class="btn btn-primary mt-3"
             >Telegram канал</a

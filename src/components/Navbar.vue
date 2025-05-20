@@ -1,25 +1,16 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import LanguageSwitcher from './LanguageSwitcher.vue'
-import { useI18n, translate } from '../utils/i18n'
-import type { TranslationLanguages, TranslationKeys } from '../utils/i18n'
+import ThemeSwitcher from './ThemeSwitcher.vue'
+import { useI18n } from 'vue-i18n'
 
 const router = useRouter()
 const isMenuOpen = ref(false)
 const isAuthenticated = ref(false)
-const currentLanguage = ref<TranslationLanguages>('ru')
 
-// Загрузка текущего языка
-onMounted(() => {
-  const { currentLanguage: savedLanguage } = useI18n()
-  currentLanguage.value = savedLanguage
-})
-
-// Функция для получения перевода
-const t = (key: TranslationKeys): string => {
-  return translate(key, currentLanguage.value)
-}
+// Получаем доступ к i18n
+const { t } = useI18n()
 
 // Проверка статуса авторизации
 const checkAuth = () => {
@@ -27,9 +18,7 @@ const checkAuth = () => {
 }
 
 // Проверяем статус авторизации при загрузке компонента
-onMounted(() => {
-  checkAuth()
-})
+checkAuth()
 
 // Слушаем изменения маршрута для обновления статуса аутентификации
 watch(
@@ -102,6 +91,9 @@ const logout = () => {
 
         <!-- Добавляем переключатель языка -->
         <LanguageSwitcher class="language-switcher" />
+
+        <!-- Добавляем переключатель темы -->
+        <ThemeSwitcher class="theme-switcher" />
       </div>
     </div>
   </nav>
@@ -110,11 +102,12 @@ const logout = () => {
 <style scoped>
 .navbar {
   padding: var(--spacing-md) 0;
-  background-color: white;
+  background-color: var(--navbar-bg);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   position: sticky;
   top: 0;
   z-index: 1000;
+  transition: background-color 0.3s;
 }
 
 .navbar-container {
@@ -242,6 +235,10 @@ const logout = () => {
   margin-left: var(--spacing-sm);
 }
 
+.theme-switcher {
+  margin-left: var(--spacing-sm);
+}
+
 .navbar-menu-toggle {
   display: none;
   flex-direction: column;
@@ -303,7 +300,8 @@ const logout = () => {
 
   .btn-register,
   .btn-telegram,
-  .language-switcher {
+  .language-switcher,
+  .theme-switcher {
     margin-top: var(--spacing-sm);
     text-align: center;
     margin-left: 0;

@@ -1,22 +1,35 @@
 <script setup lang="ts">
 import Navbar from './components/Navbar.vue'
-import { ref, onMounted } from 'vue'
-import { useI18n, translate } from './utils/i18n'
-import type { TranslationLanguages, TranslationKeys } from './utils/i18n'
+import { useI18n } from 'vue-i18n'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { i18n as i18nInstance } from './utils/i18n'
+import { initTheme } from './utils/theme'
 
-// Текущий язык
-const currentLanguage = ref<TranslationLanguages>('ru')
+// Получаем доступ к i18n
+const { t, locale } = useI18n()
 
-// Загрузка текущего языка
+// Инициализируем систему тем
 onMounted(() => {
-  const { currentLanguage: savedLanguage } = useI18n()
-  currentLanguage.value = savedLanguage
+  // Инициализируем тему
+  initTheme()
+
+  // Добавляем слушатель события изменения localStorage
+  window.addEventListener('storage', handleStorageChange)
 })
 
-// Функция для получения перевода
-const t = (key: TranslationKeys): string => {
-  return translate(key, currentLanguage.value)
+// Следим за изменениями языка в localStorage
+const handleStorageChange = (event: StorageEvent) => {
+  if (event.key === 'preferredLanguage' && event.newValue) {
+    if (locale.value !== event.newValue) {
+      locale.value = event.newValue
+    }
+  }
 }
+
+// Удаляем слушатель при уничтожении компонента
+onUnmounted(() => {
+  window.removeEventListener('storage', handleStorageChange)
+})
 
 // Получение текущего года
 const currentYear = new Date().getFullYear()
@@ -123,10 +136,13 @@ const currentYear = new Date().getFullYear()
 }
 
 .footer {
-  background-color: #222a36;
-  color: white;
+  background-color: var(--footer-bg);
+  color: var(--footer-text);
   padding: var(--spacing-xl) 0 var(--spacing-lg);
   margin-top: var(--spacing-xl);
+  transition:
+    background-color 0.3s,
+    color 0.3s;
 }
 
 .footer-content {
@@ -142,7 +158,7 @@ const currentYear = new Date().getFullYear()
 }
 
 .footer-heading {
-  color: white;
+  color: var(--footer-heading-color);
   font-family: var(--font-family-heading);
   font-weight: var(--font-weight-bold);
   font-size: 1.25rem;
@@ -163,7 +179,7 @@ const currentYear = new Date().getFullYear()
 }
 
 .footer-text {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--footer-text);
   font-family: var(--font-family-body);
   line-height: 1.6;
   margin-bottom: var(--spacing-md);

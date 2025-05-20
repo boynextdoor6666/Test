@@ -1,37 +1,29 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useI18n } from '../utils/i18n'
-import type { TranslationLanguages } from '../utils/i18n'
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { switchLanguage } from '../utils/i18n'
 
-// Состояние текущего языка
-const currentLanguage = ref<TranslationLanguages>('ru')
+// Используем composable из vue-i18n
+const i18n = useI18n()
 
-// Инициализация при монтировании компонента
-onMounted(() => {
-  const { currentLanguage: savedLanguage } = useI18n()
-  currentLanguage.value = savedLanguage
-})
-
-// Переключение языка
+// Функция переключения языка
 const toggleLanguage = () => {
-  currentLanguage.value = currentLanguage.value === 'ru' ? 'kg' : 'ru'
-  localStorage.setItem('preferredLanguage', currentLanguage.value)
-  // Перезагрузка страницы для обновления всех компонентов
-  window.location.reload()
+  switchLanguage()
 }
 
-// Флаг для отображения
+// Флаг для отображения, основываясь на текущем языке
 const flagIcon = computed(() => {
-  return currentLanguage.value === 'ru' ? 'flag-ru' : 'flag-kg'
+  return i18n.locale.value === 'ru' ? 'flag-ru' : 'flag-kg'
+})
+
+// Заголовок кнопки
+const buttonTitle = computed(() => {
+  return i18n.locale.value === 'ru' ? 'Сменить язык на кыргызский' : 'Тилди орусчага алмаштыруу'
 })
 </script>
 
 <template>
-  <button
-    @click="toggleLanguage"
-    class="lang-btn"
-    :title="currentLanguage === 'ru' ? 'Сменить язык на кыргызский' : 'Тилди орусчага алмаштыруу'"
-  >
+  <button @click="toggleLanguage" class="lang-btn" :title="buttonTitle">
     <span :class="['flag', flagIcon]"></span>
   </button>
 </template>
