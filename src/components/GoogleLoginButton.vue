@@ -1,69 +1,196 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
-import { signInWithGoogle, initGoogleAuth } from '../utils/googleAuth'
+import { onMounted, computed, ref } from 'vue'
+import { initGoogleAuth } from '../utils/googleAuth'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
+// Определяем тип для данных пользователя
+interface UserInfo {
+  id: string
+  email: string
+  name: string
+  fullName: string
+  picture: string
+  authProvider: string
+  userType: string
+}
+
 const { t } = useI18n()
 const route = useRoute()
+const authStatus = ref('Ожидание инициализации...')
+const isDev = ref(import.meta.env.DEV || false)
+const userInfo = ref<UserInfo | null>(null)
 
-// Определяем текст кнопки в зависимости от текущего маршрута
-const buttonText = computed(() => {
-  return route.path === '/register' ? t('registerWithGoogle') : t('loginWithGoogle')
+// Определяем текст для логирования в зависимости от текущего маршрута
+const authType = computed(() => {
+  return route.path === '/register' ? 'регистрации' : 'входа'
 })
+
+// Функция для проверки статуса аутентификации
+function checkAuthStatus() {
+  const user = localStorage.getItem('user')
+  if (user) {
+    try {
+      const userData = JSON.parse(user)
+      userInfo.value = userData
+      authStatus.value = 'Авторизован'
+      console.log('Пользователь авторизован:', userData)
+    } catch (e) {
+      authStatus.value = 'Ошибка данных пользователя'
+      userInfo.value = null
+      console.error('Ошибка при парсинге данных пользователя:', e)
+    }
+  } else {
+    authStatus.value = 'Не авторизован'
+    userInfo.value = null
+    console.log('Пользователь не авторизован')
+  }
+}
 
 // Инициализация Google Auth при монтировании компонента
 onMounted(() => {
+  // Выводим текущий URL для отладки
+  console.log('Текущий URL приложения:', window.location.origin)
+  console.log('Полный путь:', window.location.href)
+
+  // Проверяем текущий статус авторизации
+  checkAuthStatus()
+
+  console.log(`GoogleLoginButton компонент смонтирован для ${authType.value}`)
+  authStatus.value = 'Инициализация Google Auth...'
+
   initGoogleAuth()
+    .then(() => {
+      authStatus.value = 'Google Auth инициализирован'
+      console.log('Google Auth успешно инициализирован')
+    })
+    .catch((err) => {
+      authStatus.value = 'Ошибка инициализации Google Auth'
+      console.error('Ошибка в initGoogleAuth:', err)
+    })
+
+  // Отслеживаем изменения авторизации
+  window.addEventListener('storage', (event) => {
+    if (event.key === 'user') {
+      console.log('Изменение статуса авторизации')
+      checkAuthStatus()
+    }
+  })
 })
 </script>
 
 <template>
-  <button @click="signInWithGoogle" class="google-login-btn">
-    <span class="google-icon"></span>
-    <span class="btn-text">{{ buttonText }}</span>
-  </button>
+  <div class="auth-container">
+    <!-- Container for Google's rendered button -->
+    <div class="g-signin-button"></div>
+
+    <!-- Debug info (в более компактном виде) -->
+    <div v-if="isDev" class="auth-status" :class="{ 'auth-status-success': userInfo }">
+      <div v-if="!userInfo" class="status-text">{{ authStatus }}</div>
+      <div v-else class="user-info">
+        <div class="status-badge">✓</div>
+        <div class="user-name">{{ userInfo.name }}</div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <style scoped>
-.google-login-btn {
+.auth-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin: 15px 0;
+}
+
+/* Стили для контейнера кнопки Google */
+.g-signin-button {
+  width: 100%;
+  max-width: 320px; /* Ограничиваем максимальную ширину для лучшего вида */
+  min-height: 42px; /* Минимальная высота для контейнера */
+  display: flex;
+  justify-content: center;
+}
+
+/* Статус аутентификации для отладки */
+.auth-status {
+  margin-top: 6px;
+  font-size: 10px;
+  color: #666;
+  text-align: center;
+  padding: 3px 6px;
+  border-radius: 3px;
+  background-color: #f5f5f5;
+  max-width: 180px;
+  width: auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: 1px solid #e0e0e0;
+}
+
+.auth-status-success {
+  background-color: #e8f5e9;
+  border-color: #a5d6a7;
+}
+
+.status-text {
+  font-style: italic;
+}
+
+.user-info {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  background-color: white;
-  color: rgba(0, 0, 0, 0.75);
-  border: 1px solid #dadce0;
-  border-radius: 4px;
-  padding: 8px 16px;
-  font-family: var(--font-family-body);
-  font-size: 0.95rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  width: 100%;
+  gap: 3px;
 }
 
-.google-login-btn:hover {
-  background-color: #f8f8f8;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+.status-badge {
+  color: #4caf50;
+  font-weight: bold;
 }
 
-.google-icon {
-  display: inline-block;
-  width: 18px;
-  height: 18px;
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="%23EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="%234285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="%23FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="%2334A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>');
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
+.user-name {
+  color: #333;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Стилизуем отрендеренную Google кнопку */
+:global([role='button'][data-is-signin-button='true']) {
+  width: 100% !important;
+  max-width: 320px !important;
+  margin: 0 auto !important;
+  height: 42px !important;
+  border-radius: 4px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12) !important;
+  transition: box-shadow 0.3s ease !important;
+}
+
+:global([role='button'][data-is-signin-button='true']:hover) {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2) !important;
 }
 
 @media (max-width: 768px) {
-  .google-login-btn {
-    font-size: 0.9rem;
-    padding: 8px 12px;
+  .auth-container {
+    margin: 10px 0;
+  }
+
+  .g-signin-button {
+    max-width: 280px; /* Чуть меньше на мобильных */
+  }
+
+  .auth-status {
+    max-width: 150px;
+    font-size: 9px;
+  }
+
+  .user-name {
+    max-width: 120px;
   }
 }
 </style>

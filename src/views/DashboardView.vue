@@ -840,84 +840,82 @@ const handleAddJob = () => {
 
       <!-- Профиль пользователя -->
       <div class="tab-content" v-if="activeTab === 'profile'">
-        <div class="profile-card">
-          <div class="profile-header">
-            <h2>{{ t('personalData') }}</h2>
-            <button @click="openEditProfileModal" class="btn btn-primary">
-              <i class="fas fa-edit"></i> {{ t('editProfile') }}
-            </button>
+        <div class="profile-header">
+          <h2>{{ t('personalData') }}</h2>
+          <button @click="openEditProfileModal" class="btn btn-primary">
+            <i class="fas fa-edit"></i> {{ t('editProfile') }}
+          </button>
+        </div>
+
+        <!-- Обновляем блок отображения аватара профиля пользователя, чтобы показывать загруженное фото -->
+        <div class="profile-avatar" v-if="user.photo">
+          <img :src="user.photo" alt="Фото пользователя" class="avatar-img" />
+        </div>
+        <div class="profile-avatar" v-else-if="user.avatar">
+          <img :src="user.avatar" alt="Аватар пользователя" class="avatar-img" />
+        </div>
+        <div class="profile-avatar" v-else>
+          <div class="avatar-placeholder">
+            <i class="fas fa-user-circle"></i>
+          </div>
+        </div>
+
+        <div class="profile-info">
+          <div class="profile-field">
+            <span class="field-label">{{ t('name') }}:</span>
+            <span class="field-value">{{ user.fullName }}</span>
           </div>
 
-          <!-- Обновляем блок отображения аватара профиля пользователя, чтобы показывать загруженное фото -->
-          <div class="profile-avatar" v-if="user.photo">
-            <img :src="user.photo" alt="Фото пользователя" class="avatar-img" />
-          </div>
-          <div class="profile-avatar" v-else-if="user.avatar">
-            <img :src="user.avatar" alt="Аватар пользователя" class="avatar-img" />
-          </div>
-          <div class="profile-avatar" v-else>
-            <div class="avatar-placeholder">
-              <i class="fas fa-user-circle"></i>
-            </div>
+          <div class="profile-field">
+            <span class="field-label">{{ t('phone') }}:</span>
+            <span class="field-value">{{ user.phone }}</span>
           </div>
 
-          <div class="profile-info">
-            <div class="profile-field">
-              <span class="field-label">{{ t('name') }}:</span>
-              <span class="field-value">{{ user.fullName }}</span>
-            </div>
+          <div class="profile-field">
+            <span class="field-label">{{ t('email') }}:</span>
+            <span class="field-value">{{ user.email }}</span>
+          </div>
 
-            <div class="profile-field">
-              <span class="field-label">{{ t('phone') }}:</span>
-              <span class="field-value">{{ user.phone }}</span>
-            </div>
+          <div class="profile-field">
+            <span class="field-label">{{ t('age') }}:</span>
+            <span class="field-value">{{ user.age }} лет</span>
+          </div>
 
-            <div class="profile-field">
-              <span class="field-label">{{ t('email') }}:</span>
-              <span class="field-value">{{ user.email }}</span>
-            </div>
+          <div class="profile-field" v-if="userType === 'worker'">
+            <span class="field-label">{{ t('hasOtherJob') }}:</span>
+            <span class="field-value">{{ user.hasOtherJobs ? 'Да' : 'Нет' }}</span>
+          </div>
 
-            <div class="profile-field">
-              <span class="field-label">{{ t('age') }}:</span>
-              <span class="field-value">{{ user.age }} лет</span>
-            </div>
-
-            <div class="profile-field" v-if="userType === 'worker'">
-              <span class="field-label">{{ t('hasOtherJob') }}:</span>
-              <span class="field-value">{{ user.hasOtherJobs ? 'Да' : 'Нет' }}</span>
-            </div>
-
-            <div
-              class="profile-field"
-              v-if="userType === 'worker' && user.skills && user.skills.length > 0"
-            >
-              <span class="field-label">{{ t('skills') }}:</span>
-              <span class="field-value">
-                <span v-for="(skill, index) in user.skills" :key="index" class="skill-tag">
-                  {{ skill }}
-                </span>
+          <div
+            class="profile-field"
+            v-if="userType === 'worker' && user.skills && user.skills.length > 0"
+          >
+            <span class="field-label">{{ t('skills') }}:</span>
+            <span class="field-value">
+              <span v-for="(skill, index) in user.skills" :key="index" class="skill-tag">
+                {{ skill }}
               </span>
-            </div>
+            </span>
+          </div>
 
-            <div class="profile-field" v-if="userType === 'worker' && user.experience">
-              <span class="field-label">{{ t('experience') }}:</span>
-              <span class="field-value">{{ user.experience }}</span>
-            </div>
+          <div class="profile-field" v-if="userType === 'worker' && user.experience">
+            <span class="field-label">{{ t('experience') }}:</span>
+            <span class="field-value">{{ user.experience }}</span>
+          </div>
 
-            <div class="profile-field">
-              <span class="field-label">{{ t('accountType') }}:</span>
-              <span class="field-value">{{
-                userType === 'worker' ? t('workerType') : t('employerType')
-              }}</span>
-            </div>
+          <div class="profile-field">
+            <span class="field-label">{{ t('accountType') }}:</span>
+            <span class="field-value">{{
+              userType === 'worker' ? t('workerType') : t('employerType')
+            }}</span>
+          </div>
 
-            <div class="profile-field" v-if="user.authProvider">
-              <span class="field-label">{{ t('loginMethod') }}:</span>
-              <span class="field-value auth-provider">
-                <i :class="authProviderIcon" class="auth-icon"></i>
-                {{ authProviderName }}
-              </span>
-            </div>
+          <div class="profile-field" v-if="user.authProvider">
+            <span class="field-label">{{ t('loginMethod') }}:</span>
+            <span class="field-value auth-provider">
+              <i :class="authProviderIcon" class="auth-icon"></i>
+              {{ authProviderName }}
+            </span>
           </div>
         </div>
       </div>
@@ -1698,7 +1696,7 @@ const handleAddJob = () => {
 }
 
 /* Профиль */
-.profile-card h2,
+.tab-content h2,
 .jobs-filters h2,
 .notifications-card h2 {
   margin-top: 0;
@@ -1742,30 +1740,35 @@ const handleAddJob = () => {
 
 .profile-info {
   margin-bottom: var(--spacing-lg);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
 }
 
 .profile-field {
-  margin-bottom: var(--spacing-md);
-  display: flex;
+  margin-bottom: 0;
+  display: grid;
+  grid-template-columns: 150px 1fr;
   align-items: center;
-  padding: var(--spacing-sm) 0;
+  padding: 8px 0;
   border-bottom: 1px solid var(--border-color);
 }
 
 .field-label {
   font-weight: var(--font-weight-medium);
-  margin-right: var(--spacing-lg);
   color: var(--text-secondary);
-  min-width: 180px;
-}
-
-[data-theme='dark'] .field-label {
-  color: #a1c3ff;
+  padding-right: 15px;
 }
 
 .field-value {
   font-weight: var(--font-weight-medium);
   color: var(--text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-theme='dark'] .field-label {
+  color: #a1c3ff;
 }
 
 [data-theme='dark'] .field-value {
