@@ -2629,4 +2629,9 @@ textarea.form-control {
   font-size: 0.9rem;
   white-space: pre-line;
 }
+
+/* Form labels dark mode override */
+[data-theme='dark'] .form-group label {
+  color: #000000;
+}
 </style>

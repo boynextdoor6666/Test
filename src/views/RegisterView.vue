@@ -949,4 +949,11 @@ const setUserType = (type: string) => {
 .btn-outline:hover {
   background-color: rgba(62, 104, 255, 0.1);
 }
+
+/* Dark mode form label override */
+[data-theme='dark'] .form-group label,
+[data-theme='dark'] label.checkbox-label,
+[data-theme='dark'] .checkbox-text {
+  color: #000000;
+}
 </style>

@@ -1074,6 +1074,11 @@ h1 {
   color: var(--text-color);
 }
 
+/* Override for dark mode to make labels black */
+[data-theme='dark'] .modal .form-group label {
+  color: #000000;
+}
+
 .modal .form-control {
   width: 100%;
   padding: 10px 14px;

@@ -576,4 +576,9 @@ const hideGoogleOAuthInstructions = () => {
     flex-direction: column;
   }
 }
+
+/* Dark mode form label override */
+[data-theme='dark'] .form-group label {
+  color: #000000;
+}
 </style>
