@@ -309,7 +309,7 @@ const hideGoogleOAuthInstructions = () => {
 }
 
 .login-header p {
-  color: #333333;
+  color: var(--text-color);
 }
 
 .login-form {
@@ -326,7 +326,7 @@ const hideGoogleOAuthInstructions = () => {
 .form-group label {
   margin-bottom: 8px;
   font-weight: 500;
-  color: #333333;
+  color: var(--text-color);
 }
 
 .form-control {
@@ -335,7 +335,7 @@ const hideGoogleOAuthInstructions = () => {
   border-radius: 6px;
   font-size: 16px;
   transition: border-color 0.3s;
-  color: #333333;
+  color: var(--text-color);
 }
 
 .form-control::placeholder {
@@ -391,7 +391,7 @@ const hideGoogleOAuthInstructions = () => {
 
 .divider span {
   padding: 0 10px;
-  color: #555555;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
@@ -406,7 +406,7 @@ const hideGoogleOAuthInstructions = () => {
   text-align: center;
   margin-bottom: 10px;
   font-weight: 500;
-  color: #333333;
+  color: var(--text-color);
 }
 
 .demo-account {
@@ -414,11 +414,11 @@ const hideGoogleOAuthInstructions = () => {
   padding: 10px;
   border-radius: 6px;
   margin-bottom: 8px;
-  color: #333333;
+  color: var(--text-color);
 }
 
 .demo-account strong {
-  color: #222222;
+  color: var(--text-color);
 }
 
 @media (max-width: 600px) {
@@ -482,7 +482,7 @@ const hideGoogleOAuthInstructions = () => {
 
 .oauth-error-content {
   padding: 20px;
-  color: #333333;
+  color: var(--text-color);
 }
 
 .error-details {
@@ -490,18 +490,18 @@ const hideGoogleOAuthInstructions = () => {
   padding: 15px;
   border-radius: 4px;
   margin: 15px 0;
-  color: #333333;
+  color: var(--text-color);
 }
 
 .oauth-error-content h4 {
   margin-top: 20px;
   margin-bottom: 10px;
-  color: #333333;
+  color: var(--text-color);
 }
 
 .oauth-error-content ol {
   padding-left: 20px;
-  color: #333333;
+  color: var(--text-color);
 }
 
 .oauth-error-content ol li {
@@ -510,7 +510,7 @@ const hideGoogleOAuthInstructions = () => {
 
 .oauth-error-content ul {
   margin-top: 8px;
-  color: #333333;
+  color: var(--text-color);
 }
 
 .oauth-error-content code {

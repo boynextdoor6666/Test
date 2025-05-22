@@ -140,7 +140,7 @@ onMounted(() => {
 .auth-status {
   margin-top: 6px;
   font-size: 10px;
-  color: #333333;
+  color: var(--text-color);
   text-align: center;
   padding: 3px 6px;
   border-radius: 3px;
@@ -160,7 +160,7 @@ onMounted(() => {
 
 .status-text {
   font-style: italic;
-  color: #333333;
+  color: var(--text-color);
 }
 
 .user-info {
@@ -176,7 +176,7 @@ onMounted(() => {
 }
 
 .user-name {
-  color: #333333;
+  color: var(--text-color);
   max-width: 150px;
   overflow: hidden;
   text-overflow: ellipsis;

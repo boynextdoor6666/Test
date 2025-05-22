@@ -483,6 +483,12 @@ const recentJobs = ref([
 
 .about-text {
   flex: 1;
+  color: var(--text-color);
+}
+
+.about-text p {
+  color: var(--text-color);
+  margin-bottom: 1rem;
 }
 
 .about-image {
@@ -532,7 +538,7 @@ const recentJobs = ref([
   z-index: 1;
   max-width: 800px;
   margin: 0 auto;
-  background-color: white;
+  background-color: var(--card-bg);
   padding: 60px;
   border-radius: var(--radius-lg);
   box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
@@ -628,12 +634,16 @@ const recentJobs = ref([
   display: flex;
   align-items: center;
   gap: 10px;
-  color: var(--text-light);
+  color: #666666;
   font-size: 0.9rem;
 }
 
 .cta-guarantee i {
   color: var(--success-color);
+}
+
+.cta-guarantee span {
+  color: var(--text-color);
 }
 
 @media (max-width: 768px) {
@@ -671,5 +681,9 @@ const recentJobs = ref([
   .about-image img {
     max-width: 200px;
   }
+}
+
+.about-section {
+  background-color: var(--card-bg);
 }
 </style>

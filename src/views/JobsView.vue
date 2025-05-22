@@ -902,6 +902,7 @@ h1 {
   font-family: var(--font-family-body);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
+  color: var(--text-color);
 }
 
 .search-input:focus {
@@ -945,15 +946,16 @@ h1 {
 }
 
 .category-btn {
-  padding: 8px 16px;
+  padding: 10px 20px;
+  background-color: var(--card-bg);
   border: 1px solid var(--border-color);
-  border-radius: 20px;
-  background-color: white;
+  border-radius: var(--radius-md);
+  color: var(--text-color);
   font-family: var(--font-family-body);
+  font-size: 0.95rem;
   font-weight: var(--font-weight-medium);
-  color: var(--text-secondary);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s;
 }
 
 .category-btn.active {
@@ -964,7 +966,7 @@ h1 {
 }
 
 .category-btn:hover:not(.active) {
-  background-color: var(--bg-color);
+  background-color: var(--bg-light);
   transform: translateY(-2px);
 }
 
@@ -987,14 +989,44 @@ h1 {
 }
 
 .no-jobs {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: var(--spacing-xl);
-  background-color: var(--bg-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl) var(--spacing-lg);
+  background-color: var(--bg-light);
   border-radius: var(--radius-lg);
+  margin: var(--spacing-xl) 0;
+  text-align: center;
+}
+
+.no-jobs .job-icon {
+  font-size: 3rem;
+  color: var(--text-color-lighter);
+  margin-bottom: var(--spacing-md);
+}
+
+.no-jobs h3 {
+  color: var(--text-color);
+  margin-bottom: var(--spacing-sm);
+}
+
+.no-jobs p {
   color: var(--text-secondary);
-  font-family: var(--font-family-body);
-  font-size: 1.1rem;
+  margin-bottom: var(--spacing-md);
+}
+
+.reset-btn {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.reset-btn:hover {
+  color: var(--primary-hover);
 }
 
 /* Модальное окно */
@@ -1012,7 +1044,7 @@ h1 {
 }
 
 .modal {
-  background: #fff;
+  background: var(--card-bg);
   border-radius: var(--radius-lg);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
   padding: 32px 28px;
@@ -1032,7 +1064,14 @@ h1 {
 }
 
 .modal .form-group {
-  margin-bottom: 18px;
+  margin-bottom: 20px;
+}
+
+.modal .form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: var(--font-weight-medium);
+  color: var(--text-color);
 }
 
 .modal .form-control {
@@ -1042,6 +1081,7 @@ h1 {
   border-radius: var(--radius-md);
   font-size: 15px;
   font-family: var(--font-family-body);
+  color: var(--text-color);
 }
 
 .modal .form-control.has-error {
@@ -1078,7 +1118,7 @@ h1 {
 }
 
 .btn-outline {
-  background-color: white;
+  background-color: var(--card-bg);
   border: 1px solid var(--primary-color);
   color: var(--primary-color);
   padding: 10px 20px;
@@ -1161,6 +1201,7 @@ textarea.form-control {
   font-size: 1rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   transition: all 0.3s;
+  color: var(--text-color);
 }
 
 .search-input:focus {
@@ -1194,7 +1235,7 @@ textarea.form-control {
 
 .category-btn {
   padding: 10px 20px;
-  background-color: white;
+  background-color: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   color: var(--text-color);
@@ -1275,47 +1316,6 @@ textarea.form-control {
 .clear-filter:hover {
   background-color: rgba(0, 0, 0, 0.1);
   color: var(--danger-color);
-}
-
-.no-jobs {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-xl) var(--spacing-lg);
-  background-color: var(--bg-light);
-  border-radius: var(--radius-lg);
-  margin: var(--spacing-xl) 0;
-  text-align: center;
-}
-
-.no-jobs .job-icon {
-  font-size: 3rem;
-  color: var(--text-color-lighter);
-  margin-bottom: var(--spacing-md);
-}
-
-.no-jobs h3 {
-  margin-bottom: var(--spacing-sm);
-  color: var(--text-color);
-}
-
-.no-jobs p {
-  color: var(--text-color-light);
-}
-
-.reset-btn {
-  background: none;
-  border: none;
-  color: var(--primary-color);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  padding: 0;
-  text-decoration: underline;
-}
-
-.reset-btn:hover {
-  color: var(--primary-color-dark);
 }
 
 /* Стили для тестовой панели были удалены */

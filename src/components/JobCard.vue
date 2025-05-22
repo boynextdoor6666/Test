@@ -137,7 +137,7 @@ function formatDate(dateString: string): string {
 <style scoped>
 .job-card {
   border-radius: var(--radius-lg);
-  background-color: white;
+  background-color: var(--card-bg);
   padding: var(--spacing-lg);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
@@ -221,6 +221,10 @@ function formatDate(dateString: string): string {
   font-size: 0.9rem;
   color: var(--text-secondary);
   padding: var(--spacing-xs) 0;
+}
+
+.job-detail span {
+  color: var(--text-color);
 }
 
 .job-detail i,

@@ -515,7 +515,7 @@ const setUserType = (type: string) => {
 }
 
 .register-header p {
-  color: #333333;
+  color: var(--text-color);
 }
 
 .user-type-selector {
@@ -530,12 +530,12 @@ const setUserType = (type: string) => {
   flex: 1;
   padding: 12px;
   text-align: center;
-  background: white;
+  background: var(--card-bg);
   border: none;
   cursor: pointer;
   transition: all 0.3s;
   font-weight: 500;
-  color: #333333;
+  color: var(--text-color);
 }
 
 .user-type-btn.active {
@@ -636,7 +636,7 @@ const setUserType = (type: string) => {
 .photo-hint {
   margin-top: 8px;
   font-size: 12px;
-  color: #555555;
+  color: var(--text-secondary);
 }
 
 .photo-error {
@@ -668,7 +668,7 @@ const setUserType = (type: string) => {
 
 .divider span {
   padding: 0 10px;
-  color: #555555;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
@@ -694,7 +694,7 @@ const setUserType = (type: string) => {
 
 .checkbox-text {
   font-size: 14px;
-  color: #333333;
+  color: var(--text-color);
 }
 
 .terms-link {
@@ -710,7 +710,7 @@ const setUserType = (type: string) => {
 .form-group label {
   margin-bottom: 8px;
   font-weight: 500;
-  color: #333333;
+  color: var(--text-color);
 }
 
 .form-control {
@@ -719,7 +719,7 @@ const setUserType = (type: string) => {
   border-radius: 6px;
   font-size: 16px;
   transition: border-color 0.3s;
-  color: #333333;
+  color: var(--text-color);
 }
 
 .form-control::placeholder {
@@ -777,7 +777,7 @@ const setUserType = (type: string) => {
 
 .login-link {
   text-align: center;
-  color: #555555;
+  color: var(--text-secondary);
 }
 
 .login-link a {
@@ -888,7 +888,7 @@ const setUserType = (type: string) => {
 
 .oauth-error-content {
   padding: 20px;
-  color: #333333;
+  color: var(--text-color);
 }
 
 .error-details {
@@ -896,18 +896,18 @@ const setUserType = (type: string) => {
   padding: 15px;
   border-radius: 4px;
   margin: 15px 0;
-  color: #333333;
+  color: var(--text-color);
 }
 
 .oauth-error-content h4 {
   margin-top: 20px;
   margin-bottom: 10px;
-  color: #333333;
+  color: var(--text-color);
 }
 
 .oauth-error-content ol {
   padding-left: 20px;
-  color: #333333;
+  color: var(--text-color);
 }
 
 .oauth-error-content ol li {
@@ -916,7 +916,7 @@ const setUserType = (type: string) => {
 
 .oauth-error-content ul {
   margin-top: 8px;
-  color: #333333;
+  color: var(--text-color);
 }
 
 .oauth-error-content code {
