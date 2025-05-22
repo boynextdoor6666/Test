@@ -148,6 +148,19 @@ export const messages = {
     // Google Auth
     loginWithGoogle: 'Войти с помощью Google',
     registerWithGoogle: 'Зарегистрироваться с помощью Google',
+    // Error messages
+    errors: {
+      enterName: 'Введите ФИО',
+      enterPhone: 'Введите номер телефона',
+      enterEmail: 'Введите email',
+      enterAge: 'Введите возраст',
+      enterValidAge: 'Введите корректный возраст (от 16 до 100)',
+      photoRequired: 'Пожалуйста, выберите изображение',
+      photoSizeLimit: 'Размер файла не должен превышать 5МБ',
+      fillAllFields: 'Пожалуйста, заполните все обязательные поля',
+      alreadyApplied: 'Вы уже откликнулись на эту вакансию',
+      deleteConfirm: 'Вы уверены, что хотите удалить?',
+    },
   },
   kg: {
     profile: 'Профиль',
@@ -224,7 +237,7 @@ export const messages = {
     // JobsView additions
     findJobOrEmployee: 'Жумуш же аткаруучу табыңыз',
     jobsPlatformDescription:
-      'Биздин платформада 500дөн ашык вакансия жана 1000ден ашык аткаруучулар, бүгүн эле иштөөгө даяр',
+      'Биздин платформада 500дөн ашык вакансия жана 1000ден ашык аткаруuчулар, бүгүн эле иштөөгө даяр',
     addNewJob: 'Вакансия кошуу',
     jobsFound: 'Табылган вакансиялар',
     searchTitle: 'Издөө',
@@ -240,7 +253,7 @@ export const messages = {
     // JobsView with nested structure
     jobs: {
       header: {
-        title: 'Жумуш же аткаруучу табыңыз',
+        title: 'Жумуш же аткаруuчу табыңыз',
         subtitle:
           'Биздин платформада 500дөн ашык вакансия жана 1000ден ашык аткаруuчулар, бүгүн эле иштөөгө даяр',
       },
@@ -292,6 +305,19 @@ export const messages = {
     // Google Auth
     loginWithGoogle: 'Google менен кирүү',
     registerWithGoogle: 'Google менен катталуу',
+    // Error messages
+    errors: {
+      enterName: 'Аты-жөнүңүздү киргизиңиз',
+      enterPhone: 'Телефон номериңизди киргизиңиз',
+      enterEmail: 'Email киргизиңиз',
+      enterAge: 'Жашыңызды киргизиңиз',
+      enterValidAge: 'Туура жашты киргизиңиз (16дан 100гө чейин)',
+      photoRequired: 'Сүрөт тандаңыз',
+      photoSizeLimit: 'Файлдын өлчөмү 5МБдан ашпашы керек',
+      fillAllFields: 'Бардык милдеттүү талааларды толтуруңуз',
+      alreadyApplied: 'Сиз бул вакансияга мурун кайрылгансыз',
+      deleteConfirm: 'Чындап эле жок кылгыңыз келеби?',
+    },
   },
 }
 

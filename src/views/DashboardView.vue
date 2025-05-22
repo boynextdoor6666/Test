@@ -65,6 +65,8 @@ onMounted(() => {
   if (userData) {
     try {
       const parsedUser = JSON.parse(userData)
+      console.log('Загружаем данные пользователя из localStorage:', parsedUser)
+
       if (parsedUser.userType) {
         userType.value = parsedUser.userType
       }
@@ -77,9 +79,16 @@ onMounted(() => {
         authProvider: parsedUser.authProvider || '',
         skills: parsedUser.skills || [],
         experience: parsedUser.experience || '',
-        avatar: parsedUser.avatar || '',
-        photo: parsedUser.photo || '',
+        // Поддерживаем оба формата фото - photo для нашего приложения и picture для Google Auth
+        avatar: parsedUser.avatar || parsedUser.picture || '',
+        photo: parsedUser.photo || parsedUser.picture || '',
       }
+
+      console.log('Данные пользователя загружены в компонент:', user.value)
+
+      // Проверяем сохранение возраста и фото
+      console.log('Загруженный возраст:', parsedUser.age)
+      console.log('Загруженное фото:', parsedUser.photo ? 'Фото найдено' : 'Фото не найдено')
     } catch (e) {
       console.error('Ошибка при загрузке данных пользователя:', e)
     }
@@ -268,9 +277,9 @@ const setStatusFilter = (status: string) => {
 // Форматирование статуса
 const formatStatus = (status: string) => {
   const statusMap: Record<string, string> = {
-    new: 'Новое',
-    'in-progress': 'В работе',
-    completed: 'Завершено',
+    new: t('newStatus'),
+    'in-progress': t('inProgressStatus'),
+    completed: t('completedStatus'),
   }
   return statusMap[status] || status
 }
@@ -319,10 +328,10 @@ const hasApplications = computed(() => {
 // Форматирование статуса заявки
 const formatApplicationStatus = (status: string) => {
   const statusMap: Record<string, string> = {
-    new: 'Новая',
-    accepted: 'Принята',
-    rejected: 'Отклонена',
-    completed: 'Завершена',
+    new: t('newStatus'),
+    accepted: t('accept'),
+    rejected: t('reject'),
+    completed: t('completedStatus'),
   }
   return statusMap[status] || status
 }
@@ -427,29 +436,29 @@ const saveProfileChanges = () => {
   let valid = true
 
   if (!editProfileData.value.fullName) {
-    editProfileErrors.value.fullName = 'Введите ФИО'
+    editProfileErrors.value.fullName = t('errors.enterName')
     valid = false
   }
 
   if (!editProfileData.value.phone) {
-    editProfileErrors.value.phone = 'Введите номер телефона'
+    editProfileErrors.value.phone = t('errors.enterPhone')
     valid = false
   }
 
   if (!editProfileData.value.email) {
-    editProfileErrors.value.email = 'Введите email'
+    editProfileErrors.value.email = t('errors.enterEmail')
     valid = false
   }
 
   if (!editProfileData.value.age) {
-    editProfileErrors.value.age = 'Введите возраст'
+    editProfileErrors.value.age = t('errors.enterAge')
     valid = false
   } else if (
     isNaN(Number(editProfileData.value.age)) ||
     Number(editProfileData.value.age) < 16 ||
     Number(editProfileData.value.age) > 100
   ) {
-    editProfileErrors.value.age = 'Введите корректный возраст (от 16 до 100)'
+    editProfileErrors.value.age = t('errors.enterValidAge')
     valid = false
   }
 
@@ -475,9 +484,14 @@ const saveProfileChanges = () => {
   const userData = localStorage.getItem('user')
   if (userData) {
     const parsedUser = JSON.parse(userData)
+    console.log('Существующие данные пользователя перед обновлением:', parsedUser)
+
+    // Создаем обновленный объект пользователя, сохраняя все существующие поля
     const updatedUser = {
       ...parsedUser,
+      // Обновляем все поля, включая используемые Google Auth
       fullName: user.value.fullName,
+      name: user.value.fullName, // Для совместимости с форматом Google Auth
       phone: user.value.phone,
       email: user.value.email,
       age: user.value.age,
@@ -485,8 +499,40 @@ const saveProfileChanges = () => {
       skills: user.value.skills,
       experience: user.value.experience,
       photo: user.value.photo, // Сохраняем фото в localStorage
+      picture: user.value.photo || parsedUser.picture, // Обновляем picture для совместимости с Google Auth
     }
     localStorage.setItem('user', JSON.stringify(updatedUser))
+
+    // Выводим в консоль для отладки
+    console.log('Профиль пользователя обновлен:', updatedUser)
+    console.log('Сохраненный возраст:', updatedUser.age)
+    console.log('Сохраненное фото:', updatedUser.photo ? 'Фото сохранено' : 'Фото не сохранено')
+
+    // Обновляем в registeredUsers
+    try {
+      const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]')
+      const userIndex = registeredUsers.findIndex((u: any) => u.email === user.value.email)
+
+      if (userIndex !== -1) {
+        // Обновляем данные пользователя в списке зарегистрированных
+        registeredUsers[userIndex] = {
+          ...registeredUsers[userIndex],
+          fullName: user.value.fullName,
+          name: user.value.fullName,
+          phone: user.value.phone,
+          age: user.value.age,
+          hasOtherJobs: user.value.hasOtherJobs,
+          skills: user.value.skills,
+          experience: user.value.experience,
+          photo: user.value.photo,
+        }
+
+        localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers))
+        console.log('Данные пользователя обновлены в списке зарегистрированных')
+      }
+    } catch (e) {
+      console.error('Ошибка при обновлении данных в registeredUsers:', e)
+    }
   }
 
   // Закрываем модальное окно

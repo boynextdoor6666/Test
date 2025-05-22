@@ -71,12 +71,19 @@ function handleLogin() {
     )
 
     if (foundUser) {
-      // Если пользователь найден, создаем сессию
+      // Если пользователь найден, создаем сессию с полными данными пользователя
       const sessionUser = {
         email: foundUser.email,
         userType: foundUser.userType,
         name: foundUser.name,
+        fullName: foundUser.name,
         phone: foundUser.phone,
+        age: foundUser.age || 0,
+        photo: foundUser.photo || '',
+        skills: foundUser.skills || [],
+        experience: foundUser.experience || '',
+        hasOtherJobs: foundUser.hasOtherJobs || false,
+        authProvider: foundUser.authProvider || '',
       }
 
       localStorage.setItem('user', JSON.stringify(sessionUser))

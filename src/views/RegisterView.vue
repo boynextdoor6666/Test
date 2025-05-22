@@ -165,11 +165,16 @@ const handleSubmit = () => {
       // Создаем нового пользователя
       const newUser = {
         name: formData.value.name,
+        fullName: formData.value.name,
         email: formData.value.email,
         phone: formData.value.phone,
         password: formData.value.password,
         userType: formData.value.userType,
         photo: photoData,
+        age: 0, // Default value, can be updated in profile
+        hasOtherJobs: false,
+        skills: [],
+        experience: '',
       }
 
       // Добавляем пользователя в список зарегистрированных
@@ -179,10 +184,15 @@ const handleSubmit = () => {
       // Создаем сессию пользователя
       const sessionUser = {
         name: newUser.name,
+        fullName: newUser.name,
         email: newUser.email,
         phone: newUser.phone,
         userType: newUser.userType,
         photo: newUser.photo,
+        age: newUser.age,
+        hasOtherJobs: newUser.hasOtherJobs,
+        skills: newUser.skills,
+        experience: newUser.experience,
       }
 
       // Сохраняем данные пользователя в localStorage
