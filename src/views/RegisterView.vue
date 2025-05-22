@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import GoogleLoginButton from '@/components/GoogleLoginButton.vue'
 
@@ -88,6 +88,24 @@ const errors = ref<ValidationErrors>({
 })
 
 const isLoading = ref(false)
+
+// Добавляем проверку на наличие ошибки redirect_uri_mismatch в URL
+const urlParams = new URLSearchParams(window.location.search)
+const hasRedirectError = urlParams.get('error') === 'redirect_uri_mismatch'
+const showRedirectError = ref(hasRedirectError)
+
+// Возвращаем origin для использования в шаблоне
+const currentOrigin = computed(() => window.location.origin)
+
+// Функция для отображения инструкций по исправлению ошибки redirect_uri_mismatch
+const showGoogleOAuthInstructions = () => {
+  showRedirectError.value = true
+}
+
+// Функция для скрытия инструкций
+const hideGoogleOAuthInstructions = () => {
+  showRedirectError.value = false
+}
 
 // Обработка отправки формы
 const handleSubmit = () => {
@@ -382,6 +400,87 @@ const setUserType = (type: string) => {
             Уже есть аккаунт? <router-link to="/login">Войти</router-link>
           </div>
         </form>
+
+        <!-- Ошибка "redirect_uri_mismatch" с инструкциями по исправлению -->
+        <div v-if="showRedirectError" class="oauth-error-container">
+          <div class="oauth-error-card">
+            <div class="oauth-error-header">
+              <h3>Ошибка настройки Google OAuth</h3>
+              <button class="close-btn" @click="hideGoogleOAuthInstructions">&times;</button>
+            </div>
+            <div class="oauth-error-content">
+              <p>
+                <strong>Проблема:</strong> Ошибка "redirect_uri_mismatch" возникает, когда URI
+                перенаправления не настроен корректно в Google Cloud Console.
+              </p>
+
+              <div class="error-details">
+                <p>
+                  Текущий URI перенаправления: <code>{{ currentOrigin }}</code>
+                </p>
+              </div>
+
+              <h4>Шаги для исправления:</h4>
+              <ol>
+                <li>
+                  Откройте
+                  <a href="https://console.cloud.google.com/apis/credentials" target="_blank"
+                    >Google Cloud Console</a
+                  >
+                </li>
+                <li>Найдите и выберите ваш проект</li>
+                <li>Перейдите в раздел "Credentials" (Учетные данные)</li>
+                <li>Найдите и отредактируйте ваш OAuth 2.0 Client ID</li>
+                <li>
+                  В разделе "Authorized redirect URIs" добавьте следующие URI:
+                  <ul>
+                    <li>
+                      <code>{{ currentOrigin }}</code>
+                    </li>
+                    <li>
+                      <code>{{ currentOrigin }}/</code>
+                    </li>
+                    <li>
+                      <code>{{ currentOrigin }}/login</code>
+                    </li>
+                    <li>
+                      <code>{{ currentOrigin }}/register</code>
+                    </li>
+                    <li>
+                      <code>{{ currentOrigin }}/dashboard</code>
+                    </li>
+                  </ul>
+                </li>
+                <li>Нажмите "Save" (Сохранить)</li>
+                <li>Изменения могут вступить в силу через несколько минут</li>
+              </ol>
+
+              <p class="note">
+                Примечание: Если вы используете локальную разработку, также добавьте URIs для других
+                портов (например, http://localhost:3000, http://localhost:5173 и т.д.)
+              </p>
+
+              <div class="oauth-error-actions">
+                <button class="btn btn-primary" @click="hideGoogleOAuthInstructions">
+                  Понятно
+                </button>
+                <a
+                  href="https://console.cloud.google.com/apis/credentials"
+                  target="_blank"
+                  class="btn btn-outline"
+                  >Открыть Google Cloud Console</a
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ссылка для показа инструкций по настройке Google OAuth -->
+        <div class="oauth-help">
+          <button class="text-link" @click="showGoogleOAuthInstructions">
+            Проблемы с регистрацией через Google? Нажмите здесь
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -416,7 +515,7 @@ const setUserType = (type: string) => {
 }
 
 .register-header p {
-  color: var(--text-color-light);
+  color: #333333;
 }
 
 .user-type-selector {
@@ -436,6 +535,7 @@ const setUserType = (type: string) => {
   cursor: pointer;
   transition: all 0.3s;
   font-weight: 500;
+  color: #333333;
 }
 
 .user-type-btn.active {
@@ -536,7 +636,7 @@ const setUserType = (type: string) => {
 .photo-hint {
   margin-top: 8px;
   font-size: 12px;
-  color: var(--text-color-light);
+  color: #555555;
 }
 
 .photo-error {
@@ -568,7 +668,7 @@ const setUserType = (type: string) => {
 
 .divider span {
   padding: 0 10px;
-  color: var(--text-color-light);
+  color: #555555;
   font-size: 14px;
 }
 
@@ -594,7 +694,7 @@ const setUserType = (type: string) => {
 
 .checkbox-text {
   font-size: 14px;
-  color: var(--text-color);
+  color: #333333;
 }
 
 .terms-link {
@@ -610,6 +710,7 @@ const setUserType = (type: string) => {
 .form-group label {
   margin-bottom: 8px;
   font-weight: 500;
+  color: #333333;
 }
 
 .form-control {
@@ -618,6 +719,11 @@ const setUserType = (type: string) => {
   border-radius: 6px;
   font-size: 16px;
   transition: border-color 0.3s;
+  color: #333333;
+}
+
+.form-control::placeholder {
+  color: #777777;
 }
 
 .form-control:focus {
@@ -671,7 +777,7 @@ const setUserType = (type: string) => {
 
 .login-link {
   text-align: center;
-  color: var(--text-color-light);
+  color: #555555;
 }
 
 .login-link a {
@@ -682,6 +788,24 @@ const setUserType = (type: string) => {
 
 .login-link a:hover {
   text-decoration: underline;
+}
+
+.oauth-help {
+  text-align: center;
+  margin-top: 15px;
+}
+
+.text-link {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  font-size: 0.9rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.text-link:hover {
+  color: var(--primary-hover);
 }
 
 @media (max-width: 600px) {
@@ -699,5 +823,130 @@ const setUserType = (type: string) => {
     text-align: center;
     width: 100%;
   }
+
+  .register-card {
+    margin: 20px;
+    max-width: none;
+  }
+
+  .oauth-error-card {
+    max-height: 85vh;
+  }
+
+  .oauth-error-actions {
+    flex-direction: column;
+  }
+}
+
+/* Стили для ошибки OAuth */
+.oauth-error-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.oauth-error-card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.oauth-error-header {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 8px 8px 0 0;
+}
+
+.oauth-error-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #721c24;
+  cursor: pointer;
+}
+
+.oauth-error-content {
+  padding: 20px;
+  color: #333333;
+}
+
+.error-details {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 4px;
+  margin: 15px 0;
+  color: #333333;
+}
+
+.oauth-error-content h4 {
+  margin-top: 20px;
+  margin-bottom: 10px;
+  color: #333333;
+}
+
+.oauth-error-content ol {
+  padding-left: 20px;
+  color: #333333;
+}
+
+.oauth-error-content ol li {
+  margin-bottom: 8px;
+}
+
+.oauth-error-content ul {
+  margin-top: 8px;
+  color: #333333;
+}
+
+.oauth-error-content code {
+  background-color: #f0f0f0;
+  padding: 3px 6px;
+  border-radius: 3px;
+  font-family: monospace;
+  word-break: break-all;
+}
+
+.note {
+  font-style: italic;
+  color: #6c757d;
+  margin-top: 15px;
+}
+
+.oauth-error-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.btn-outline {
+  background-color: transparent;
+  border: 1px solid var(--primary-color);
+  color: var(--primary-color);
+}
+
+.btn-outline:hover {
+  background-color: rgba(62, 104, 255, 0.1);
 }
 </style>

@@ -52,6 +52,8 @@ onMounted(() => {
   // Выводим текущий URL для отладки
   console.log('Текущий URL приложения:', window.location.origin)
   console.log('Полный путь:', window.location.href)
+  console.log('Маршрут для GoogleLoginButton:', route.path)
+  console.log('Тип аутентификации:', route.path.includes('/register') ? 'регистрация' : 'вход')
 
   // Проверяем текущий статус авторизации
   checkAuthStatus()
@@ -59,15 +61,35 @@ onMounted(() => {
   console.log(`GoogleLoginButton компонент смонтирован для ${authType.value}`)
   authStatus.value = 'Инициализация Google Auth...'
 
-  initGoogleAuth()
-    .then(() => {
-      authStatus.value = 'Google Auth инициализирован'
-      console.log('Google Auth успешно инициализирован')
-    })
-    .catch((err) => {
-      authStatus.value = 'Ошибка инициализации Google Auth'
-      console.error('Ошибка в initGoogleAuth:', err)
-    })
+  // Обработка ошибок Chrome extensions
+  window.addEventListener('error', (event) => {
+    if (event.message && event.message.includes('runtime.lastError')) {
+      console.log('Игнорируем ошибку Chrome extensions:', event.message)
+      event.preventDefault() // Предотвращаем распространение ошибки
+    }
+  })
+
+  // Добавляем небольшую задержку перед инициализацией Google Auth
+  // Это дает DOM время полностью загрузиться
+  setTimeout(() => {
+    initGoogleAuth()
+      .then(() => {
+        authStatus.value = 'Google Auth инициализирован'
+        console.log('Google Auth успешно инициализирован')
+      })
+      .catch((err) => {
+        authStatus.value = 'Ошибка инициализации Google Auth'
+        console.error('Ошибка в initGoogleAuth:', err)
+
+        // Попробуем еще раз через большую задержку, если первая попытка не удалась
+        setTimeout(() => {
+          console.log('Повторная попытка инициализации Google Auth...')
+          initGoogleAuth()
+            .then(() => console.log('Повторная инициализация Google Auth успешна'))
+            .catch((e) => console.error('Повторная инициализация Google Auth не удалась:', e))
+        }, 2000)
+      })
+  }, 1000)
 
   // Отслеживаем изменения авторизации
   window.addEventListener('storage', (event) => {
@@ -118,7 +140,7 @@ onMounted(() => {
 .auth-status {
   margin-top: 6px;
   font-size: 10px;
-  color: #666;
+  color: #333333;
   text-align: center;
   padding: 3px 6px;
   border-radius: 3px;
@@ -138,6 +160,7 @@ onMounted(() => {
 
 .status-text {
   font-style: italic;
+  color: #333333;
 }
 
 .user-info {
@@ -153,7 +176,7 @@ onMounted(() => {
 }
 
 .user-name {
-  color: #333;
+  color: #333333;
   max-width: 150px;
   overflow: hidden;
   text-overflow: ellipsis;

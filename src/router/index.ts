@@ -51,13 +51,17 @@ const router = createRouter({
 
 // Проверка авторизации для защищенных маршрутов
 router.beforeEach((to, from, next) => {
+  console.log('Router navigation:', { from: from.path, to: to.path })
+
+  // Проверяем, авторизован ли пользователь
+  const isAuthenticated = localStorage.getItem('user') !== null
+  console.log('User authenticated:', isAuthenticated)
+
   // Если маршрут требует авторизации
   if (to.matched.some((record) => record.meta.requiresAuth)) {
-    // Проверяем наличие пользователя в localStorage
-    const isAuthenticated = localStorage.getItem('user') !== null
-
     if (!isAuthenticated) {
       // Если пользователь не авторизован, перенаправляем на страницу входа
+      console.log('Redirecting to login because route requires auth')
       next({
         name: 'login',
         // Сохраняем путь, на который пытался перейти пользователь
@@ -65,10 +69,18 @@ router.beforeEach((to, from, next) => {
       })
     } else {
       // Если пользователь авторизован, разрешаем доступ
+      console.log('User is authenticated, allowing access to protected route')
       next()
     }
+  }
+  // Если пользователь авторизован и пытается перейти на страницу входа или регистрации,
+  // перенаправляем его на dashboard
+  else if (isAuthenticated && (to.path === '/login' || to.path === '/register')) {
+    console.log('User is already authenticated, redirecting to dashboard')
+    next({ path: '/dashboard' })
   } else {
     // Если маршрут не требует авторизации, просто разрешаем доступ
+    console.log('Route does not require auth, allowing access')
     next()
   }
 })

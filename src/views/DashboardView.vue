@@ -499,39 +499,29 @@ const saveProfileChanges = () => {
       skills: user.value.skills,
       experience: user.value.experience,
       photo: user.value.photo, // Сохраняем фото в localStorage
-      picture: user.value.photo || parsedUser.picture, // Обновляем picture для совместимости с Google Auth
     }
+    console.log('Обновленные данные пользователя:', updatedUser)
     localStorage.setItem('user', JSON.stringify(updatedUser))
 
-    // Выводим в консоль для отладки
-    console.log('Профиль пользователя обновлен:', updatedUser)
-    console.log('Сохраненный возраст:', updatedUser.age)
-    console.log('Сохраненное фото:', updatedUser.photo ? 'Фото сохранено' : 'Фото не сохранено')
+    // Также обновляем данные в registeredUsers для обеспечения сохранности при повторном входе
+    const usersData = localStorage.getItem('registeredUsers') || '[]'
+    const users = JSON.parse(usersData)
 
-    // Обновляем в registeredUsers
-    try {
-      const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]')
-      const userIndex = registeredUsers.findIndex((u: any) => u.email === user.value.email)
+    // Находим пользователя по email
+    const userIndex = users.findIndex((u: any) => u.email === updatedUser.email)
 
-      if (userIndex !== -1) {
-        // Обновляем данные пользователя в списке зарегистрированных
-        registeredUsers[userIndex] = {
-          ...registeredUsers[userIndex],
-          fullName: user.value.fullName,
-          name: user.value.fullName,
-          phone: user.value.phone,
-          age: user.value.age,
-          hasOtherJobs: user.value.hasOtherJobs,
-          skills: user.value.skills,
-          experience: user.value.experience,
-          photo: user.value.photo,
-        }
-
-        localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers))
-        console.log('Данные пользователя обновлены в списке зарегистрированных')
+    if (userIndex !== -1) {
+      // Объединяем существующие данные с обновленными
+      users[userIndex] = {
+        ...users[userIndex],
+        ...updatedUser,
+        // Сохраняем пароль, если он был
+        password: users[userIndex].password,
       }
-    } catch (e) {
-      console.error('Ошибка при обновлении данных в registeredUsers:', e)
+
+      // Сохраняем обновленный список пользователей
+      localStorage.setItem('registeredUsers', JSON.stringify(users))
+      console.log('Данные пользователя обновлены также в registeredUsers')
     }
   }
 
