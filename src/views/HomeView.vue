@@ -1,45 +1,27 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import JobCard from '@/components/JobCard.vue'
+import { api } from '@/utils/api'
 
 // Проверка авторизации
 const isLoggedIn = ref(false)
+const recentJobs = ref<any[]>([])
+const loading = ref(true)
+const error = ref('')
 
-onMounted(() => {
-  // Проверяем наличие пользователя в localStorage
+onMounted(async () => {
   isLoggedIn.value = localStorage.getItem('user') !== null
+  loading.value = true
+  error.value = ''
+  try {
+    const jobs = await api.getJobs()
+    recentJobs.value = jobs.slice(-3).reverse()
+  } catch (e) {
+    error.value = 'Ошибка при загрузке вакансий'
+  } finally {
+    loading.value = false
+  }
 })
-
-// Sample job data
-const recentJobs = ref([
-  {
-    id: 1,
-    title: 'Уборщица на 2 часа',
-    description: 'Требуется уборщица для уборки квартиры, площадь 65 кв.м.',
-    salary: '1000 сом',
-    location: 'Бишкек, 10 мкр',
-    phone: '+996 555 123456',
-    date: '2023-06-01',
-  },
-  {
-    id: 2,
-    title: 'Разнорабочий на стройку',
-    description: 'Требуется разнорабочий на стройку на 1 день.',
-    salary: '1500 сом',
-    location: 'Бишкек, ул. Киевская',
-    phone: '+996 700 654321',
-    date: '2023-06-02',
-  },
-  {
-    id: 3,
-    title: 'Курьер на 3 часа',
-    description: 'Требуется курьер для доставки документов по городу.',
-    salary: '500 сом',
-    location: 'Бишкек, центр',
-    phone: '+996 777 987654',
-    date: '2023-06-03',
-  },
-])
 </script>
 
 <template>
@@ -135,7 +117,9 @@ const recentJobs = ref([
     <section class="section recent-jobs-section">
       <div class="container">
         <h2 class="text-center">Последние вакансии</h2>
-        <div class="jobs-grid mt-4">
+        <div v-if="loading" class="text-center py-5">Загрузка...</div>
+        <div v-else-if="error" class="text-center text-danger py-5">{{ error }}</div>
+        <div v-else class="jobs-grid mt-4">
           <JobCard v-for="job in recentJobs" :key="job.id" :job="job" />
         </div>
         <div class="text-center mt-4">

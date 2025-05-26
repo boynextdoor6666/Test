@@ -2,6 +2,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import JobCard from '@/components/JobCard.vue'
 import { useI18n } from 'vue-i18n'
+import { api } from '@/utils/api'
 
 // Получаем доступ к переводам
 const { t, locale } = useI18n()
@@ -58,72 +59,22 @@ interface JobForm {
   [key: string]: string | number | null // Индексированный тип для динамического доступа
 }
 
-// Sample job data (in a real app, this would come from an API)
 const jobs = ref<Job[]>([])
+const loading = ref(true)
+const error = ref('')
 
-// Загружать тестовые вакансии только если в localStorage ничего нет
-const defaultJobs: Job[] = [
-  {
-    id: 1,
-    title: 'Уборщица на 2 часа',
-    description: 'Требуется уборщица для уборки квартиры, площадь 65 кв.м.',
-    salary: '1000 сом',
-    location: 'Бишкек, 10 мкр',
-    phone: '+996 555 123456',
-    date: '2023-06-01',
-    category: 'Уборка',
-  },
-  {
-    id: 2,
-    title: 'Разнорабочий на стройку',
-    description: 'Требуется разнорабочий на стройку на 1 день.',
-    salary: '1500 сом',
-    location: 'Бишкек, ул. Киевская',
-    phone: '+996 700 654321',
-    date: '2023-06-02',
-    category: 'Строительство',
-  },
-  {
-    id: 3,
-    title: 'Курер на 3 часа',
-    description: 'Требуется курер для доставки документов по городу.',
-    salary: '500 сом',
-    location: 'Бишкек, центр',
-    phone: '+996 777 987654',
-    date: '2023-06-03',
-    category: 'Доставка',
-  },
-  {
-    id: 4,
-    title: 'Помощь с переездом',
-    description: 'Требуется помощь с переездом и разгрузкой вещи на 1 этаж.',
-    salary: '2000 сом',
-    location: 'Бишкек, Рг-2',
-    phone: '+996 555 789012',
-    date: '2023-06-04',
-    category: 'Разное',
-  },
-  {
-    id: 5,
-    title: 'Няня на вечеринку',
-    description: 'Требуется няня для присмотра за ребенком 5 лет на вечеринку.',
-    salary: '800 сом',
-    location: 'Бишкек, 12 мкр',
-    phone: '+996 700 345678',
-    date: '2023-06-05',
-    category: 'Няни',
-  },
-  {
-    id: 6,
-    title: 'Сборка мебели',
-    description: 'Требуется человек для сборки шкафа из МДФ.',
-    salary: '1200 сом',
-    location: 'Бишкек, Асанбай',
-    phone: '+996 777 901234',
-    date: '2023-06-06',
-    category: 'Ремонт',
-  },
-]
+// Загрузка вакансий с backend
+async function loadJobs() {
+  loading.value = true
+  error.value = ''
+  try {
+    jobs.value = await api.getJobs()
+  } catch (e) {
+    error.value = 'Ошибка при загрузке вакансий'
+  } finally {
+    loading.value = false
+  }
+}
 
 // Используем переводы для категорий
 const categoryKeys = ['all', 'cleaning', 'construction', 'delivery', 'repair', 'nanny', 'other']
@@ -196,7 +147,8 @@ const editJobErrors = ref<JobFormErrors>({
   category: '',
 })
 
-// Загрузка данных пользователя и вакансий при монтировании
+const applyMessage = ref('')
+
 onMounted(() => {
   // Проверка авторизации пользователя
   const userData = localStorage.getItem('user')
@@ -226,20 +178,7 @@ onMounted(() => {
     // userType.value = 'employer'
   }
 
-  // Загрузка вакансий из localStorage
-  const jobsData = localStorage.getItem('jobs')
-  if (jobsData) {
-    try {
-      jobs.value = JSON.parse(jobsData)
-    } catch (error) {
-      console.error('Ошибка при парсинге вакансий:', error)
-      jobs.value = defaultJobs
-      localStorage.setItem('jobs', JSON.stringify(defaultJobs))
-    }
-  } else {
-    jobs.value = defaultJobs
-    localStorage.setItem('jobs', JSON.stringify(defaultJobs))
-  }
+  loadJobs()
 })
 
 // Обновляем категории при изменении языка
@@ -335,7 +274,7 @@ const closeAddJobModal = () => {
   showAddJobModal.value = false
 }
 
-const handleAddJob = () => {
+const handleAddJob = async () => {
   // Валидация
   let valid = true
   Object.keys(addJobErrors.value).forEach((key) => (addJobErrors.value[key] = ''))
@@ -367,28 +306,14 @@ const handleAddJob = () => {
 
   if (!valid) return
 
-  // Добавление вакансии
-  const job: Job = {
-    id: Date.now(),
-    title: newJob.value.title,
-    description: newJob.value.description,
-    salary: newJob.value.salary,
-    location: newJob.value.location,
-    phone: newJob.value.phone,
-    category: newJob.value.category,
-    date: newJob.value.date,
+  try {
+    const res = await api.createJob(newJob.value)
+    if (res.error) throw new Error(res.error)
+    showAddJobModal.value = false
+    await loadJobs()
+  } catch (e: any) {
+    error.value = e.message || 'Ошибка при добавлении вакансии'
   }
-
-  jobs.value.unshift(job)
-  localStorage.setItem('jobs', JSON.stringify(jobs.value))
-
-  // Очистка полей формы
-  Object.keys(newJob.value).forEach((key) => {
-    if (key !== 'phone' && key !== 'date' && key !== 'category') {
-      newJob.value[key] = ''
-    }
-  })
-  showAddJobModal.value = false
 }
 
 // Функция для модального окна редактирования вакансии
@@ -417,7 +342,7 @@ const closeEditJobModal = () => {
   currentJobId.value = null
 }
 
-const handleEditJob = () => {
+const handleEditJob = async () => {
   // Валидация
   let valid = true
   Object.keys(editJobErrors.value).forEach((key) => (editJobErrors.value[key] = ''))
@@ -449,125 +374,54 @@ const handleEditJob = () => {
 
   if (!valid) return
 
-  // Обновление вакансии в массиве
-  const index = jobs.value.findIndex((job) => job.id === currentJobId.value)
-  if (index !== -1) {
-    // Получаем applications из текущей вакансии, если оно есть
-    const applications = jobs.value[index].applications || []
-
-    // Создаем новый объект Job из editJob
-    const updatedJob: Job = {
-      ...(editJob.value as JobForm),
-      id: currentJobId.value as number, // Приведение типа
-      applications,
-    }
-
-    jobs.value[index] = updatedJob
-    localStorage.setItem('jobs', JSON.stringify(jobs.value))
+  try {
+    const res = await api.updateJob(currentJobId.value, editJob.value)
+    if (res.error) throw new Error(res.error)
     showEditJobModal.value = false
     currentJobId.value = null
+    await loadJobs()
+  } catch (e: any) {
+    error.value = e.message || 'Ошибка при редактировании вакансии'
   }
 }
 
 // Функция для удаления вакансии
-const handleDeleteJob = (jobId: number) => {
+const handleDeleteJob = async (jobId: number) => {
   console.log('handleDeleteJob вызван с jobId:', jobId)
 
-  const index = jobs.value.findIndex((job) => job.id === jobId)
-  console.log('Найден индекс для удаления:', index)
-
-  if (index !== -1) {
-    jobs.value.splice(index, 1)
-    localStorage.setItem('jobs', JSON.stringify(jobs.value))
-    console.log('Вакансия удалена. Новое количество вакансий:', jobs.value.length)
+  try {
+    const res = await api.deleteJob(jobId)
+    if (res.error) throw new Error(res.error)
+    await loadJobs()
+  } catch (e: any) {
+    error.value = e.message || 'Ошибка при удалении вакансии'
   }
 }
 
 // Обработчик отклика на вакансию
-const handleApply = (job: Job) => {
+const handleApply = async (job: Job) => {
+  applyMessage.value = ''
   if (!isLoggedIn.value) {
     alert('Для отклика на вакансию необходимо авторизоваться')
     return
   }
-
   if (userType.value !== 'worker') {
     alert('Только работники могут откликаться на вакансию')
     return
   }
-
-  // Проверяем, не откликнулся ли уже пользователь на эту вакансию
-  const myJobsData = localStorage.getItem('myJobs')
-  let myJobs: any[] = []
-
-  if (myJobsData) {
-    try {
-      myJobs = JSON.parse(myJobsData)
-      const alreadyApplied = myJobs.some((myJob: any) => myJob.id === job.id)
-
-      if (alreadyApplied) {
-        alert(`Вы уже откликнулись на вакансию "${job.title}"`)
-        return
-      }
-    } catch (e) {
-      console.error('Ошибка при получении принятых вакансий:', e)
+  try {
+    const res = await api.apply(job.id)
+    if (res.error) {
+      applyMessage.value = res.error
+      alert(res.error)
+    } else {
+      applyMessage.value = 'Вы успешно откликнулись!'
+      alert('Вы успешно откликнулись!')
     }
+  } catch (e) {
+    applyMessage.value = 'Ошибка при отклике'
+    alert('Ошибка при отклике')
   }
-
-  // Получаем данные пользователя
-  const userData = localStorage.getItem('user')
-  let user: User = {}
-
-  if (userData) {
-    try {
-      user = JSON.parse(userData)
-    } catch (e) {
-      console.error('Ошибка при получении данных пользователя:', e)
-      return
-    }
-  } else {
-    alert('Ошибка: данные пользователя не найдены')
-    return
-  }
-
-  // Добавляем вакансию в список принятых
-  const jobCopy = {
-    ...job,
-    appliedAt: new Date().toISOString(),
-    status: 'new',
-    applicantData: {
-      id: Date.now(),
-      fullName: user.fullName || user.name || 'Пользователь',
-      phone: user.phone || '',
-      email: user.email || '',
-      skills: user.skills || [],
-      experience: user.experience || '',
-    },
-  }
-
-  // Добавляем в список принятых вакансий
-  myJobs.push(jobCopy)
-  localStorage.setItem('myJobs', JSON.stringify(myJobs))
-
-  // Обновляем статус вакансии в общем списке
-  const jobIndex = jobs.value.findIndex((j) => j.id === job.id)
-  if (jobIndex !== -1) {
-    // Добавляем информацию о том, что есть заявка
-    if (!jobs.value[jobIndex].applications) {
-      jobs.value[jobIndex].applications = []
-    }
-
-    jobs.value[jobIndex].applications.push({
-      applicantId: Date.now(),
-      applicantName: user.fullName || user.name || 'Пользователь',
-      appliedAt: new Date().toISOString(),
-      status: 'new',
-    })
-
-    localStorage.setItem('jobs', JSON.stringify(jobs.value))
-  }
-
-  // Показываем уведомление
-  alert(`Вы успешно откликнулись на вакансию "${job.title}"`)
 }
 </script>
 
@@ -618,44 +472,48 @@ const handleApply = (job: Job) => {
       </section>
 
       <section class="jobs-results">
-        <div class="jobs-filter-info">
-          <span class="jobs-count"
-            >{{ t('jobs.filterInfo.jobsCount') }}: {{ filteredJobs.length }}</span
-          >
-          <div
-            class="active-filters"
-            v-if="selectedCategory !== t('categories.all') || searchQuery"
-          >
-            <div class="filter-tag" v-if="selectedCategory !== t('categories.all')">
-              {{ selectedCategory }}
-              <button class="clear-filter" @click="setCategory(t('categories.all'))">×</button>
-            </div>
-            <div class="filter-tag" v-if="searchQuery">
-              {{ t('jobs.filterInfo.searchQuery') }}: {{ searchQuery }}
-              <button class="clear-filter" @click="searchQuery = ''">×</button>
+        <div v-if="loading" class="text-center py-5">Загрузка...</div>
+        <div v-else-if="error" class="text-center text-danger py-5">{{ error }}</div>
+        <div v-else>
+          <div class="jobs-filter-info">
+            <span class="jobs-count"
+              >{{ t('jobs.filterInfo.jobsCount') }}: {{ filteredJobs.length }}</span
+            >
+            <div
+              class="active-filters"
+              v-if="selectedCategory !== t('categories.all') || searchQuery"
+            >
+              <div class="filter-tag" v-if="selectedCategory !== t('categories.all')">
+                {{ selectedCategory }}
+                <button class="clear-filter" @click="setCategory(t('categories.all'))">×</button>
+              </div>
+              <div class="filter-tag" v-if="searchQuery">
+                {{ t('jobs.filterInfo.searchQuery') }}: {{ searchQuery }}
+                <button class="clear-filter" @click="searchQuery = ''">×</button>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="jobs-grid">
-          <job-card
-            v-for="job in filteredJobs"
-            :key="job.id"
-            :job="job"
-            :isEmployer="isLoggedIn && userType === 'employer'"
-            @edit="openEditJobModal"
-            @delete="handleDeleteJob"
-            @apply="handleApply"
-          />
-        </div>
+          <div class="jobs-grid">
+            <job-card
+              v-for="job in filteredJobs"
+              :key="job.id"
+              :job="job"
+              :isEmployer="isLoggedIn && userType === 'employer'"
+              @edit="openEditJobModal"
+              @delete="handleDeleteJob"
+              @apply="handleApply"
+            />
+          </div>
 
-        <div v-if="filteredJobs.length === 0" class="no-jobs">
-          <i class="fas fa-search job-icon"></i>
-          <h3>{{ t('jobs.noJobs.title') }}</h3>
-          <p>
-            {{ t('jobs.noJobs.text') }}
-            <button class="reset-btn" @click="resetFilters">{{ t('jobs.noJobs.resetBtn') }}</button>
-          </p>
+          <div v-if="filteredJobs.length === 0" class="no-jobs">
+            <i class="fas fa-search job-icon"></i>
+            <h3>{{ t('jobs.noJobs.title') }}</h3>
+            <p>
+              {{ t('jobs.noJobs.text') }}
+              <button class="reset-btn" @click="resetFilters">{{ t('jobs.noJobs.resetBtn') }}</button>
+            </p>
+          </div>
         </div>
       </section>
     </div>
