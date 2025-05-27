@@ -591,13 +591,16 @@ const updateApplicationStatus = (jobId: number, applicantId: number, newStatus: 
     )
 
     if (appIndex !== -1 && job.applications[appIndex]) {
-      job.applications[appIndex].status = newStatus
-      localStorage.setItem('jobs', JSON.stringify(jobs.value))
-
-      // Если статус "принято", обновляем статус самой вакансии
-      if (newStatus === 'accepted') {
-        job.status = 'in-progress'
+      const application = job.applications[appIndex]
+      if (application) {
+        application.status = newStatus
         localStorage.setItem('jobs', JSON.stringify(jobs.value))
+
+        // Если статус "принято", обновляем статус самой вакансии
+        if (newStatus === 'accepted') {
+          job.status = 'in-progress'
+          localStorage.setItem('jobs', JSON.stringify(jobs.value))
+        }
       }
     }
   }

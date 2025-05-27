@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { switchLanguage, TranslationLanguages } from '../utils/i18n'
+import { switchLanguage } from '../utils/i18n'
+import type { TranslationLanguages } from '../utils/i18n'
 import { useRouter } from 'vue-router'
 
 const { locale } = useI18n()
@@ -26,9 +27,9 @@ const closeDropdown = () => {
   isOpen.value = false
 }
 
-const selectLanguage = (langCode: TranslationLanguages) => {
+const selectLanguage = (langCode: string) => {
   if (langCode !== currentLocale.value) {
-    switchLanguage(langCode)
+    switchLanguage(langCode as TranslationLanguages)
     // Обновить URL с новым языком
     const currentPath = router.currentRoute.value.path.replace(/^\/(ru|kg)/, '')
     router.push(`/${langCode}${currentPath}`)

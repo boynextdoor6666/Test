@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { i18n, TranslationLanguages } from '../utils/i18n'
+import { i18n } from '../utils/i18n'
+import type { TranslationLanguages } from '../utils/i18n'
 
 const routes = [
   {
