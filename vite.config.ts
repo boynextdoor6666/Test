@@ -17,6 +17,10 @@ export default defineConfig({
     port: 3000,
     strictPort: true,
     host: true,
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+      'Cross-Origin-Embedder-Policy': 'unsafe-none'
+    }
   },
   build: {
     // Улучшенные настройки для хостинга
