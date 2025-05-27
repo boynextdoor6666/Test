@@ -1,54 +1,26 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { i18n } from '../utils/i18n'
+
+const routes = [
+  {
+    path: '/:locale(ru|kg)?',
+    component: { template: '<router-view />' },
+    children: [
+      { path: '', name: 'home', component: () => import('../views/HomeView.vue') },
+      { path: 'jobs', name: 'jobs', component: () => import('../views/JobsView.vue'), meta: { requiresAuth: true } },
+      { path: 'jobs/:id', name: 'job-details', component: () => import('../views/JobDetailView.vue'), meta: { requiresAuth: true } },
+      { path: 'about', name: 'about', component: () => import('../views/AboutView.vue') },
+      { path: 'register', name: 'register', component: () => import('../views/RegisterView.vue'), meta: { requiresGuest: true } },
+      { path: 'login', name: 'login', component: () => import('../views/LoginView.vue'), meta: { requiresGuest: true } },
+      { path: 'dashboard', name: 'dashboard', component: () => import('../views/DashboardView.vue'), meta: { requiresAuth: true } },
+      { path: ':pathMatch(.*)*', redirect: '' },
+    ]
+  }
+]
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [
-    {
-      path: '/',
-      name: 'home',
-      component: () => import('../views/HomeView.vue'),
-    },
-    {
-      path: '/jobs',
-      name: 'jobs',
-      component: () => import('../views/JobsView.vue'),
-      meta: { requiresAuth: true },
-    },
-    {
-      path: '/jobs/:id',
-      name: 'job-details',
-      component: () => import('../views/JobDetailView.vue'),
-      meta: { requiresAuth: true },
-    },
-    {
-      path: '/about',
-      name: 'about',
-      component: () => import('../views/AboutView.vue'),
-    },
-    {
-      path: '/register',
-      name: 'register',
-      component: () => import('../views/RegisterView.vue'),
-      meta: { requiresGuest: true },
-    },
-    {
-      path: '/login',
-      name: 'login',
-      component: () => import('../views/LoginView.vue'),
-      meta: { requiresGuest: true },
-    },
-    {
-      path: '/dashboard',
-      name: 'dashboard',
-      component: () => import('../views/DashboardView.vue'),
-      meta: { requiresAuth: true },
-    },
-    // Маршрут для перенаправления при попытке доступа к несуществующим страницам
-    {
-      path: '/:pathMatch(.*)*',
-      redirect: '/',
-    },
-  ],
+  routes
 })
 
 // Функция для проверки валидности токена
@@ -115,8 +87,13 @@ function checkAuthentication(): { isAuthenticated: boolean; user: any | null } {
   }
 }
 
-// Проверка авторизации для защищенных маршрутов
 router.beforeEach((to, from, next) => {
+  const locale = to.params.locale as string
+  if (locale && ['ru', 'kg'].includes(locale)) {
+    i18n.global.locale.value = locale
+    localStorage.setItem('preferredLanguage', locale)
+  }
+
   console.log('Router navigation:', { from: from.path, to: to.path })
 
   const { isAuthenticated, user } = checkAuthentication()
