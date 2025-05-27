@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import GoogleSignIn from '@/components/GoogleSignIn.vue'
+import { authAPI } from '@/utils/api'
 
 const router = useRouter()
 
@@ -107,8 +108,19 @@ const hideGoogleOAuthInstructions = () => {
   showRedirectError.value = false
 }
 
+const isOnlineMode = ref(false)
+
+onMounted(async () => {
+  try {
+    await fetch(import.meta.env.VITE_API_URL + '/health')
+    isOnlineMode.value = true
+  } catch (e) {
+    isOnlineMode.value = false
+  }
+})
+
 // Обработка отправки формы
-const handleSubmit = () => {
+const handleSubmit = async () => {
   // Сбросить ошибки
   Object.keys(errors.value).forEach((key) => {
     const field = key as keyof ValidationErrors
@@ -159,68 +171,40 @@ const handleSubmit = () => {
 
   if (isValid) {
     isLoading.value = true
-
-    // Имитация запроса к API для регистрации
-    setTimeout(() => {
-      // Проверяем, не зарегистрирован ли уже пользователь с таким email
-      const usersData = localStorage.getItem('registeredUsers') || '[]'
-      const users = JSON.parse(usersData)
-
-      const existingUser = users.find((user: any) => user.email === formData.value.email)
-
-      if (existingUser) {
-        errors.value.email = 'Пользователь с таким email уже существует'
+    if (isOnlineMode.value) {
+      try {
+        let photoData = ''
+        if (profilePhoto.preview) {
+          photoData = profilePhoto.preview
+        }
+        const response = await authAPI.register({
+          name: formData.value.name,
+          email: formData.value.email,
+          phone: formData.value.phone,
+          password: formData.value.password,
+          userType: formData.value.userType,
+          photo: photoData
+        })
+        // Сохраняем пользователя с токеном
+        const userData = {
+          ...response.user,
+          token: response.token
+        }
+        localStorage.setItem('user', JSON.stringify(userData))
         isLoading.value = false
-        return
+        router.push('/')
+      } catch (err: any) {
+        isLoading.value = false
+        if (err.response?.data?.error) {
+          errors.value.email = err.response.data.error
+        } else {
+          errors.value.email = 'Ошибка регистрации'
+        }
       }
-
-      // Если есть фото профиля, сохраняем его в Base64
-      let photoData = ''
-      if (profilePhoto.preview) {
-        photoData = profilePhoto.preview
-      }
-
-      // Создаем нового пользователя
-      const newUser = {
-        name: formData.value.name,
-        fullName: formData.value.name,
-        email: formData.value.email,
-        phone: formData.value.phone,
-        password: formData.value.password,
-        userType: formData.value.userType,
-        photo: photoData,
-        age: 0, // Default value, can be updated in profile
-        hasOtherJobs: false,
-        skills: [],
-        experience: '',
-      }
-
-      // Добавляем пользователя в список зарегистрированных
-      users.push(newUser)
-      localStorage.setItem('registeredUsers', JSON.stringify(users))
-
-      // Создаем сессию пользователя
-      const sessionUser = {
-        name: newUser.name,
-        fullName: newUser.name,
-        email: newUser.email,
-        phone: newUser.phone,
-        userType: newUser.userType,
-        photo: newUser.photo,
-        age: newUser.age,
-        hasOtherJobs: newUser.hasOtherJobs,
-        skills: newUser.skills,
-        experience: newUser.experience,
-      }
-
-      // Сохраняем данные пользователя в localStorage
-      localStorage.setItem('user', JSON.stringify(sessionUser))
-
+    } else {
       isLoading.value = false
-
-      // Перенаправляем на главную
-      router.push('/')
-    }, 500)
+      errors.value.email = 'Регистрация недоступна в демо-режиме. Используйте тестовые аккаунты.'
+    }
   }
 }
 
