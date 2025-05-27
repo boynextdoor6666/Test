@@ -17,6 +17,7 @@ export default defineConfig({
     port: 3000,
     strictPort: true,
     host: true,
+    allowedHosts: ['tezjumush-production.up.railway.app'],
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
       'Cross-Origin-Embedder-Policy': 'unsafe-none'
