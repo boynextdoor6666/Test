@@ -61,7 +61,29 @@ export const messages = {
     changeLanguage: 'Тилди алмаштыруу (KG)', // Переключить на кыргызский
     about: 'О нас',
     findJob: 'Найти работу',
-    dashboard: 'Личный кабинет',
+    dashboard: {
+      title: 'Панель управления',
+      welcome: 'Добро пожаловать',
+      stats: {
+        totalJobs: 'Всего вакансий',
+        activeJobs: 'Активные вакансии',
+        totalApplications: 'Всего заявок',
+        pendingApplications: 'Ожидающие заявки'
+      },
+      recentJobs: 'Недавние вакансии',
+      recentApplications: 'Недавние заявки',
+      noJobs: 'У вас пока нет вакансий',
+      noApplications: 'У вас пока нет заявок',
+      viewAll: 'Просмотреть все',
+      createJob: 'Создать вакансию',
+      editJob: 'Редактировать вакансию',
+      deleteJob: 'Удалить вакансию',
+      status: {
+        active: 'Активная',
+        closed: 'Закрытая',
+        draft: 'Черновик'
+      }
+    },
     logout: 'Выйти',
     login: 'Войти',
     register: 'Регистрация',
@@ -166,23 +188,6 @@ export const messages = {
     offline: {
       message: 'Нет подключения к интернету. Работаем в оффлайн режиме.'
     },
-    dashboard: {
-      totalApplications: 'Всего заявок',
-      applicants: 'Соискатели',
-      appliedAt: 'Откликнулся',
-      editProfile: 'Редактировать профиль',
-      personalData: 'Личные данные'
-    },
-    seo: {
-      home: {
-        title: 'TEZ JUMUSH - Быстрый поиск работы в Кыргызстане',
-        description: 'Найдите работу или исполнителей быстро и легко. Более 500 вакансий и 1000 работников.'
-      },
-      jobs: {
-        title: 'Вакансии - TEZ JUMUSH',
-        description: 'Просмотрите актуальные вакансии и найдите подходящую работу в Кыргызстане.'
-      }
-    },
     jobCount: 'нет вакансий | {count} вакансия | {count} вакансии | {count} вакансий',
   },
   kg: {
@@ -241,7 +246,29 @@ export const messages = {
     changeLanguage: 'Сменить язык (RU)', // Переключить на русский
     about: 'Биз жөнүндө',
     findJob: 'Жумуш табуу',
-    dashboard: 'Жеке кабинет',
+    dashboard: {
+      title: 'Панель управления',
+      welcome: 'Добро пожаловать',
+      stats: {
+        totalJobs: 'Всего вакансий',
+        activeJobs: 'Активные вакансии',
+        totalApplications: 'Всего заявок',
+        pendingApplications: 'Ожидающие заявки'
+      },
+      recentJobs: 'Недавние вакансии',
+      recentApplications: 'Недавние заявки',
+      noJobs: 'У вас пока нет вакансий',
+      noApplications: 'У вас пока нет заявок',
+      viewAll: 'Просмотреть все',
+      createJob: 'Создать вакансию',
+      editJob: 'Редактировать вакансию',
+      deleteJob: 'Удалить вакансию',
+      status: {
+        active: 'Активная',
+        closed: 'Закрытая',
+        draft: 'Черновик'
+      }
+    },
     logout: 'Чыгуу',
     login: 'Кирүү',
     register: 'Каттоо',
@@ -260,7 +287,7 @@ export const messages = {
     // JobsView additions
     findJobOrEmployee: 'Жумуш же аткаруuчу табыңыз',
     jobsPlatformDescription:
-      'Биздин платформада 500дөн ашык вакансия жана 1000ден ашыk аткаруuчулар, бүгүн эле иштөөгө даяр',
+      'Биздин платформада 500дөн ашыk вакансия жана 1000ден ашыk аткаруuчулар, бүгүн эле иштөөгө даяр',
     addNewJob: 'Вакансия кошуу',
     jobsFound: 'Табылган вакансиялар',
     searchTitle: 'Издөө',
@@ -345,23 +372,6 @@ export const messages = {
     },
     offline: {
       message: 'Интернетке туташуу жок. Оффлайн режимде иштейбиз.'
-    },
-    dashboard: {
-      totalApplications: 'Жалпы арыздар',
-      applicants: 'Арыз ээлери',
-      appliedAt: 'Жооп берген',
-      editProfile: 'Профилди түзөтүү',
-      personalData: 'Жеке маалыматтар'
-    },
-    seo: {
-      home: {
-        title: 'TEZ JUMUSH - Кыргызстанда жумуш издөө',
-        description: 'Жумушту же аткаруuчуну тез жана оңой табыңыз. 500дөн ашыk вакансия жана 1000 жумушчу.'
-      },
-      jobs: {
-        title: 'Вакансиялар - TEZ JUMUSH',
-        description: 'Кыргызстанда актуалдуу вакансияларды көрүңүз жана ылайыктуу жумуш табыңыз.'
-      }
     },
     jobCount: 'вакансия жок | {count} вакансия | {count} вакансия',
   },
