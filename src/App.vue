@@ -8,53 +8,153 @@ import { initTheme } from './utils/theme'
 // Получаем доступ к i18n
 const { t, locale } = useI18n()
 
+// Состояния приложения
+const isOnline = ref(navigator.onLine)
+const showOfflineMessage = ref(false)
+
 // Инициализируем систему тем
 onMounted(() => {
   // Инициализируем тему
   initTheme()
 
-  // Проверяем, если в localStorage сохранен тестовый пользователь Google, удаляем его
+  // Проверяем и очищаем неактуальные данные пользователя
   try {
     const userData = localStorage.getItem('user')
     if (userData) {
       const user = JSON.parse(userData)
-      if (user.authProvider === 'google') {
-        // Если это тестовый пользователь Google, удаляем его из localStorage
+      
+      // Проверяем валидность токена (простая проверка на истечение времени)
+      if (user.token && user.token.startsWith('demo_google_token_')) {
+        const tokenTimestamp = parseInt(user.token.split('_').pop() || '0')
+        const dayInMs = 24 * 60 * 60 * 1000
+        const weekAgo = Date.now() - 7 * dayInMs
+        
+        if (tokenTimestamp < weekAgo) {
+          localStorage.removeItem('user')
+          console.log('Устаревший демо-токен удален')
+        }
+      }
+      
+      // Удаляем старые тестовые аккаунты Google без дополнительной проверки
+      if (user.authProvider === 'google' && user.email && user.email.includes('test')) {
         localStorage.removeItem('user')
-        console.log('Тестовый пользователь Google был удален из localStorage')
+        console.log('Тестовый пользователь Google был удален')
       }
     }
   } catch (error) {
     console.error('Ошибка при проверке пользователя:', error)
+    // Если данные пользователя повреждены, удаляем их
+    localStorage.removeItem('user')
   }
 
-  // Добавляем слушатель события изменения localStorage
+  // Добавляем слушатели событий
   window.addEventListener('storage', handleStorageChange)
+  window.addEventListener('online', handleOnlineStatus)
+  window.addEventListener('offline', handleOfflineStatus)
+  window.addEventListener('error', handleGlobalError)
 })
 
-// Следим за изменениями языка в localStorage
+// Обработка изменений localStorage
 const handleStorageChange = (event: StorageEvent) => {
   if (event.key === 'preferredLanguage' && event.newValue) {
     if (locale.value !== event.newValue) {
       locale.value = event.newValue
     }
   }
+  
+  // Обработка удаления пользователя в другой вкладке
+  if (event.key === 'user' && event.newValue === null) {
+    // Пользователь был разлогинен в другой вкладке
+    window.location.reload()
+  }
 }
 
-// Удаляем слушатель при уничтожении компонента
+// Обработка статуса подключения
+const handleOnlineStatus = () => {
+  isOnline.value = true
+  showOfflineMessage.value = false
+  console.log('Приложение онлайн')
+}
+
+const handleOfflineStatus = () => {
+  isOnline.value = false
+  showOfflineMessage.value = true
+  console.log('Приложение оффлайн')
+  
+  // Автоматически скрываем сообщение через 5 секунд
+  setTimeout(() => {
+    showOfflineMessage.value = false
+  }, 5000)
+}
+
+// Глобальная обработка ошибок
+const handleGlobalError = (event: ErrorEvent) => {
+  // Игнорируем ошибки расширений Chrome
+  if (
+    event.message &&
+    (event.message.includes('runtime.lastError') ||
+      event.message.includes('Extension context invalidated') ||
+      event.message.includes('message channel closed') ||
+      event.message.includes('ResizeObserver loop limit exceeded'))
+  ) {
+    console.log('Игнорируем ошибку расширения/браузера:', event.message)
+    event.preventDefault()
+    return false
+  }
+  
+  // Обработка ошибок загрузки ресурсов
+  if (event.message && event.message.includes('Loading chunk')) {
+    console.warn('Ошибка загрузки чанка, рекомендуется обновить страницу')
+    // Можно показать пользователю уведомление
+  }
+  
+  // Логируем другие ошибки
+  if (event.error) {
+    console.error('Глобальная ошибка приложения:', {
+      message: event.message,
+      filename: event.filename,
+      lineno: event.lineno,
+      colno: event.colno,
+      error: event.error
+    })
+  }
+}
+
+// Удаляем слушатели при размонтировании
 onUnmounted(() => {
   window.removeEventListener('storage', handleStorageChange)
+  window.removeEventListener('online', handleOnlineStatus)
+  window.removeEventListener('offline', handleOfflineStatus)
+  window.removeEventListener('error', handleGlobalError)
 })
 
 // Получение текущего года
 const currentYear = new Date().getFullYear()
+
+// Функция для закрытия оффлайн сообщения
+const closeOfflineMessage = () => {
+  showOfflineMessage.value = false
+}
 </script>
 
 <template>
+  <!-- Уведомление об оффлайн режиме -->
+  <div v-if="showOfflineMessage" class="offline-notification">
+    <div class="offline-content">
+      <i class="fas fa-wifi-slash"></i>
+      <span>{{ t('offline.message', 'Нет подключения к интернету. Работаем в оффлайн режиме.') }}</span>
+      <button @click="closeOfflineMessage" class="close-offline">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+  </div>
+
   <Navbar />
+  
   <div class="app-container">
     <router-view />
   </div>
+  
   <footer class="footer">
     <div class="container">
       <div class="footer-content">
@@ -105,20 +205,20 @@ const currentYear = new Date().getFullYear()
                 <i class="fas fa-envelope"></i> tezjumush.ksla@gmail.com
               </a>
             </li>
-            <li></li>
           </ul>
         </div>
 
         <div class="footer-section">
           <h3 class="footer-heading">{{ t('socials') }}</h3>
           <div class="social-links">
-            <a href="https://t.me/tezJumush" target="_blank" class="social-link">
+            <a href="https://t.me/tezJumush" target="_blank" class="social-link" rel="noopener noreferrer">
               <i class="fab fa-telegram"></i> Telegram
             </a>
             <a
               href="https://www.instagram.com/tezjumush.kg?igsh=b3NodHNpcDBrZ2V3&utm_source=qr"
               target="_blank"
               class="social-link"
+              rel="noopener noreferrer"
             >
               <i class="fab fa-instagram"></i> Instagram
             </a>

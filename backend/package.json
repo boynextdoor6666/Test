@@ -32,6 +32,7 @@
     "mysql2": "^3.9.7"
   },
   "devDependencies": {
+    "terser": "^5.16.0",
     "@types/bcryptjs": "^2.4.2",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",

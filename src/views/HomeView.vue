@@ -1,48 +1,91 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import JobCard from '@/components/JobCard.vue'
+import { jobsAPI } from '@/utils/api'
 // Импортируем логотип
 import logoImg from '@/assets/img/logo.jpg'
 
-// Определение локальных данных для демонстрации без API
+// Состояния компонента
 const isLoggedIn = ref(false)
-const recentJobs = ref<any[]>([
-  {
-    id: 1,
-    title: 'Курьер на день',
-    description: 'Доставка документов по городу на 1 день',
-    salary: '1000 сом',
-    location: 'Бишкек',
-    phone: '+996 555 123456',
-    date: new Date().toISOString(),
-    category: 'Доставка',
-  },
-  {
-    id: 2,
-    title: 'Помощник на мероприятие',
-    description: 'Требуется помощник для организации мероприятия',
-    salary: '1500 сом',
-    location: 'Бишкек',
-    phone: '+996 555 789012',
-    date: new Date().toISOString(),
-    category: 'Мероприятия',
-  },
-  {
-    id: 3,
-    title: 'Уборка помещения',
-    description: 'Уборка офиса после ремонта',
-    salary: '2000 сом',
-    location: 'Бишкек',
-    phone: '+996 555 345678',
-    date: new Date().toISOString(),
-    category: 'Уборка',
-  }
-])
-const loading = ref(false)
+const recentJobs = ref<any[]>([])
+const loading = ref(true)
 const error = ref('')
+const imageError = ref(false)
+
+// Правильный путь к логотипу
+const logoSrc = ref('/img/logo.jpg')
+const fallbackLogoSrc = ref('/img/logo-fallback.png')
+
+// Обработка ошибки загрузки изображения
+const handleImageError = (event: Event) => {
+  console.warn('Основное изображение не загрузилось, используем fallback')
+  imageError.value = true
+  
+  // Пытаемся загрузить fallback изображение
+  const img = event.target as HTMLImageElement
+  if (img.src !== fallbackLogoSrc.value) {
+    img.src = fallbackLogoSrc.value
+  } else {
+    // Если и fallback не загрузился, скрываем изображение
+    img.style.display = 'none'
+  }
+}
+
+// Загрузка последних вакансий
+const loadRecentJobs = async () => {
+  try {
+    loading.value = true
+    error.value = ''
+    
+    const jobs = await jobsAPI.getJobs()
+    // Берем только первые 3 вакансии для главной страницы
+    recentJobs.value = jobs.slice(0, 3)
+  } catch (e: any) {
+    console.error('Ошибка при загрузке вакансий:', e)
+    error.value = 'Не удалось загрузить вакансии'
+    
+    // В случае ошибки используем демо-данные
+    recentJobs.value = [
+      {
+        id: 1,
+        title: 'Курьер на день',
+        description: 'Доставка документов по городу на 1 день',
+        salary: '1000 сом',
+        location: 'Бишкек',
+        phone: '+996 555 123456',
+        date: new Date().toISOString(),
+        category: 'Доставка',
+      },
+      {
+        id: 2,
+        title: 'Помощник на мероприятие',
+        description: 'Требуется помощник для организации мероприятия',
+        salary: '1500 сом',
+        location: 'Бишкек',
+        phone: '+996 555 789012',
+        date: new Date().toISOString(),
+        category: 'Мероприятия',
+      },
+      {
+        id: 3,
+        title: 'Уборка помещения',
+        description: 'Уборка офиса после ремонта',
+        salary: '2000 сом',
+        location: 'Бишкек',
+        phone: '+996 555 345678',
+        date: new Date().toISOString(),
+        category: 'Уборка',
+      }
+    ]
+  } finally {
+    loading.value = false
+  }
+}
 
 onMounted(() => {
-  isLoggedIn.value = localStorage.getItem('user') !== null
+  // Проверяем авторизацию пользователя
+  isLoggedIn.value = !!localStorage.getItem('user')
+  loadRecentJobs()
 })
 </script>
 
@@ -65,7 +108,7 @@ onMounted(() => {
               <router-link to="/jobs" class="btn btn-primary btn-lg">
                 <i class="fas fa-search"></i> Найти работу
               </router-link>
-              <a href="https://t.me/tezJumush" target="_blank" class="btn btn-outline btn-lg">
+              <a href="https://t.me/tezJumush" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-lg">
                 <i class="fab fa-telegram-plane"></i> Выложить работу
               </a>
             </div>
@@ -97,7 +140,18 @@ onMounted(() => {
             </div>
           </div>
           <div class="hero-image">
-            <img :src="logoImg" alt="Tez Jumush" />
+            <img 
+              :src="logoSrc" 
+              alt="Tez Jumush"
+              @error="handleImageError"
+              v-show="!imageError"
+              loading="lazy"
+            />
+            <!-- Fallback для случая, когда изображения не загружаются -->
+            <div v-if="imageError" class="logo-fallback">
+              <div class="logo-text">TEZ JUMUSH</div>
+              <div class="logo-subtitle">Быстрый поиск работы</div>
+            </div>
           </div>
         </div>
       </div>
@@ -129,7 +183,17 @@ onMounted(() => {
             </p>
           </div>
           <div class="about-image">
-            <img :src="logoImg" alt="Tez Jumush" width="200" />
+            <img 
+              :src="logoSrc" 
+              alt="Tez Jumush" 
+              width="200"
+              @error="handleImageError"
+              v-show="!imageError"
+              loading="lazy"
+            />
+            <div v-if="imageError" class="logo-fallback-small">
+              <div class="logo-text-small">TEZ JUMUSH</div>
+            </div>
           </div>
         </div>
       </div>
@@ -139,13 +203,37 @@ onMounted(() => {
     <section class="section recent-jobs-section">
       <div class="container">
         <h2 class="text-center">Последние вакансии</h2>
-        <div v-if="loading" class="text-center py-5">Загрузка...</div>
-        <div v-else-if="error" class="text-center text-danger py-5">{{ error }}</div>
-        <div v-else class="jobs-grid mt-4">
-          <JobCard v-for="job in recentJobs" :key="job.id" :job="job" />
+        
+        <div v-if="loading" class="loading-container">
+          <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+          </div>
+          <p>Загрузка вакансий...</p>
         </div>
+        
+        <div v-else-if="error" class="error-container">
+          <div class="error-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+          </div>
+          <p class="error-message">{{ error }}</p>
+          <button @click="loadRecentJobs" class="retry-button">
+            <i class="fas fa-redo"></i> Попробовать снова
+          </button>
+        </div>
+        
+        <div v-else class="jobs-grid mt-4">
+          <JobCard 
+            v-for="job in recentJobs" 
+            :key="job.id" 
+            :job="job"
+            @error="(err) => console.warn('Job card error:', err)"
+          />
+        </div>
+        
         <div class="text-center mt-4">
-          <router-link to="/jobs" class="btn btn-primary">Смотреть все вакансии</router-link>
+          <router-link to="/jobs" class="btn btn-primary">
+            <i class="fas fa-briefcase"></i> Смотреть все вакансии
+          </router-link>
         </div>
       </div>
     </section>
@@ -163,7 +251,7 @@ onMounted(() => {
             Разместите вакансию бесплатно и найдите подходящих работников уже сегодня!
           </p>
           <div class="cta-actions">
-            <a href="https://t.me/tezJumush" target="_blank" class="btn btn-cta">
+            <a href="https://t.me/tezJumush" target="_blank" rel="noopener noreferrer" class="btn btn-cta">
               <i class="fab fa-telegram-plane"></i> Разместить вакансию
             </a>
             <div class="cta-guarantee">
