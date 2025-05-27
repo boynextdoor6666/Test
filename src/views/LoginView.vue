@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import GoogleLoginButton from '@/components/GoogleLoginButton.vue'
+import GoogleSignIn from '@/components/GoogleSignIn.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -178,7 +178,7 @@ const hideGoogleOAuthInstructions = () => {
             <div class="divider">
               <span>или</span>
             </div>
-            <GoogleLoginButton />
+            <GoogleSignIn />
           </div>
 
           <!-- Демо-аккаунты для тестирования -->

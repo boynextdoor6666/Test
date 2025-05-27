@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import GoogleLoginButton from '@/components/GoogleLoginButton.vue'
+import GoogleSignIn from '@/components/GoogleSignIn.vue'
 
 const router = useRouter()
 
@@ -393,7 +393,7 @@ const setUserType = (type: string) => {
             <div class="divider">
               <span>или</span>
             </div>
-            <GoogleLoginButton />
+            <GoogleSignIn :isRegister="true" />
           </div>
 
           <div class="login-link">
