@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { api } from '@/utils/api'
+import { jobsAPI } from '@/utils/api'
 
 const route = useRoute()
 const jobId = parseInt(route.params.id as string)
@@ -17,7 +17,7 @@ onMounted(async () => {
   loading.value = true
   error.value = ''
   try {
-    job.value = await api.getJob(jobId)
+    job.value = await jobsAPI.getJob(jobId)
     if (job.value && job.value.error) {
       error.value = job.value.error
       job.value = null
@@ -41,7 +41,7 @@ const formatDate = (dateString: string) => {
 async function applyToJob() {
   applyMessage.value = ''
   try {
-    const res = await api.apply(jobId)
+    const res = await jobsAPI.apply(jobId)
     if (res.error) {
       applyMessage.value = res.error
     } else {

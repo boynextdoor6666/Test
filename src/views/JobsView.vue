@@ -2,7 +2,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import JobCard from '@/components/JobCard.vue'
 import { useI18n } from 'vue-i18n'
-import { api } from '@/utils/api'
+import { jobsAPI } from '@/utils/api'
 
 // Получаем доступ к переводам
 const { t, locale } = useI18n()
@@ -68,7 +68,7 @@ async function loadJobs() {
   loading.value = true
   error.value = ''
   try {
-    jobs.value = await api.getJobs()
+    jobs.value = await jobsAPI.getJobs()
   } catch (e) {
     error.value = 'Ошибка при загрузке вакансий'
   } finally {
@@ -307,7 +307,7 @@ const handleAddJob = async () => {
   if (!valid) return
 
   try {
-    const res = await api.createJob(newJob.value)
+    const res = await jobsAPI.createJob(newJob.value)
     if (res.error) throw new Error(res.error)
     showAddJobModal.value = false
     await loadJobs()
@@ -375,7 +375,7 @@ const handleEditJob = async () => {
   if (!valid) return
 
   try {
-    const res = await api.updateJob(currentJobId.value, editJob.value)
+    const res = await jobsAPI.updateJob(currentJobId.value, editJob.value)
     if (res.error) throw new Error(res.error)
     showEditJobModal.value = false
     currentJobId.value = null
@@ -390,7 +390,7 @@ const handleDeleteJob = async (jobId: number) => {
   console.log('handleDeleteJob вызван с jobId:', jobId)
 
   try {
-    const res = await api.deleteJob(jobId)
+    const res = await jobsAPI.deleteJob(jobId)
     if (res.error) throw new Error(res.error)
     await loadJobs()
   } catch (e: any) {
@@ -410,7 +410,7 @@ const handleApply = async (job: Job) => {
     return
   }
   try {
-    const res = await api.apply(job.id)
+    const res = await jobsAPI.apply(job.id)
     if (res.error) {
       applyMessage.value = res.error
       alert(res.error)

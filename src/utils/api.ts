@@ -147,4 +147,31 @@ export const authAPI = {
   }
 }
 
+export const jobsAPI = {
+  async getJobs() {
+    const res = await api.get('/jobs')
+    return res.data
+  },
+  async getJob(id) {
+    const res = await api.get(`/jobs/${id}`)
+    return res.data
+  },
+  async createJob(jobData) {
+    const res = await api.post('/jobs', jobData)
+    return res.data
+  },
+  async updateJob(id, jobData) {
+    const res = await api.put(`/jobs/${id}`, jobData)
+    return res.data
+  },
+  async deleteJob(id) {
+    const res = await api.delete(`/jobs/${id}`)
+    return res.data
+  },
+  async apply(jobId) {
+    const res = await api.post('/applications', { job_id: jobId })
+    return res.data
+  }
+}
+
 export default api
