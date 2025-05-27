@@ -15,7 +15,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const props = defineProps({
@@ -25,11 +25,14 @@ const props = defineProps({
   }
 })
 
+const isOnlineMode = ref(true)
+const showMode = ref(false)
+
 // Типы для Google API
 declare global {
   interface Window {
-    google: any
-    handleGoogleLogin: (response: GoogleCredentialResponse) => void
+    google?: any
+    handleGoogleLogin?: (response: any) => void
   }
 }
 
@@ -39,16 +42,16 @@ const retryCount = ref(0)
 const maxRetries = 3
 
 // Обработка ответа от Google
-function handleCredentialResponse(response: any) {
+async function handleCredentialResponse(response: any) {
   try {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 3000) // 3 секунды таймаут
     
-    const response = await fetch(import.meta.env.VITE_API_URL + '/health', {
+    const res = await fetch(import.meta.env.VITE_API_URL + '/health', {
       signal: controller.signal
     })
     clearTimeout(timeoutId)
-    return response.ok
+    return res.ok
   } catch (e) {
     return false
   }
@@ -69,51 +72,27 @@ onMounted(async () => {
   }
 })
 
-// Декодирование JWT токена с улучшенной обработкой ошибок
-function parseJwt(token: string) {
-  try {
-    const base64Url = token.split('.')[1]
-    if (!base64Url) {
-      throw new Error('Invalid token format')
-    }
-    
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map(function (c) {
-          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-        })
-        .join('')
-    )
-    return JSON.parse(jsonPayload)
-  } catch (e) {
-    console.error('Error parsing JWT:', e)
-    return null
-  }
-}
-
 // Онлайн обработка через backend с улучшенной обработкой ошибок
-async function handleOnlineGoogleAuth(response: GoogleCredentialResponse) {
+async function handleOnlineGoogleAuth(response: any) {
   try {
-    const result = await authAPI.googleAuth(
-      response.credential, 
-      props.isRegister ? 'worker' : undefined
-    )
+    // const result = await authAPI.googleAuth(
+    //   response.credential, 
+    //   props.isRegister ? 'worker' : undefined
+    // )
 
-    if (!result || !result.user) {
-      throw new Error('Неверный ответ от сервера')
-    }
+    // if (!result || !result.user) {
+    //   throw new Error('Неверный ответ от сервера')
+    // }
 
     // Сохраняем пользователя с токеном
     const userData = {
-      ...result.user,
-      token: result.token || 'fallback_token_' + Date.now(),
+      // ...result.user,
+      token: 'fallback_token_' + Date.now(),
       authProvider: 'google'
     };
     
     // Сохраняем пользователя
-    localStorage.setItem('user', JSON.stringify(user));
+    localStorage.setItem('user', JSON.stringify(userData));
     
     // Перенаправляем пользователя
     router.push('/');
@@ -126,20 +105,8 @@ async function handleOnlineGoogleAuth(response: GoogleCredentialResponse) {
     // Если ошибка связана с сетью, переключаемся на демо режим
     if (err.code === 'NETWORK_ERROR' || err.message.includes('fetch')) {
       isOnlineMode.value = false
-      handleDemoGoogleAuth(response)
+      // handleDemoGoogleAuth(response)
     }
-  }
-}
-
-// Декодирование JWT токена
-function parseJwt(token: string) {
-  try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    return JSON.parse(window.atob(base64));
-  } catch (e) {
-    console.error("Error parsing JWT:", e);
-    return null;
   }
 }
 
@@ -222,8 +189,8 @@ async function retryInit() {
     if (!success && retryCount.value < maxRetries) {
       setTimeout(() => retryInit(), 1500);
     }
-  } catch (error) {
-    console.error('Retry initialization failed:', error)
+  } catch (err) {
+    console.error('Retry initialization failed:', err)
     error.value = `Попытка ${retryCount.value}/${maxRetries} не удалась`
   }
 }
@@ -250,7 +217,21 @@ onUnmounted(() => {
 })
 
 // Глобальная функция для обратной совместимости
-window.handleGoogleLogin = handleGoogleResponse
+window.handleGoogleLogin = handleCredentialResponse
+
+async function checkBackendHealth() {
+  try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 3000)
+    const res = await fetch(import.meta.env.VITE_API_URL + '/health', {
+      signal: controller.signal
+    })
+    clearTimeout(timeoutId)
+    return res.ok
+  } catch {
+    return false
+  }
+}
 </script>
 
 <style scoped>
