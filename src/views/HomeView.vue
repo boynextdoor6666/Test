@@ -1,26 +1,48 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import JobCard from '@/components/JobCard.vue'
-import { api } from '@/utils/api'
+// Импортируем логотип
+import logoImg from '@/assets/img/logo.jpg'
 
-// Проверка авторизации
+// Определение локальных данных для демонстрации без API
 const isLoggedIn = ref(false)
-const recentJobs = ref<any[]>([])
-const loading = ref(true)
+const recentJobs = ref<any[]>([
+  {
+    id: 1,
+    title: 'Курьер на день',
+    description: 'Доставка документов по городу на 1 день',
+    salary: '1000 сом',
+    location: 'Бишкек',
+    phone: '+996 555 123456',
+    date: new Date().toISOString(),
+    category: 'Доставка',
+  },
+  {
+    id: 2,
+    title: 'Помощник на мероприятие',
+    description: 'Требуется помощник для организации мероприятия',
+    salary: '1500 сом',
+    location: 'Бишкек',
+    phone: '+996 555 789012',
+    date: new Date().toISOString(),
+    category: 'Мероприятия',
+  },
+  {
+    id: 3,
+    title: 'Уборка помещения',
+    description: 'Уборка офиса после ремонта',
+    salary: '2000 сом',
+    location: 'Бишкек',
+    phone: '+996 555 345678',
+    date: new Date().toISOString(),
+    category: 'Уборка',
+  }
+])
+const loading = ref(false)
 const error = ref('')
 
-onMounted(async () => {
+onMounted(() => {
   isLoggedIn.value = localStorage.getItem('user') !== null
-  loading.value = true
-  error.value = ''
-  try {
-    const jobs = await api.getJobs()
-    recentJobs.value = jobs.slice(-3).reverse()
-  } catch (e) {
-    error.value = 'Ошибка при загрузке вакансий'
-  } finally {
-    loading.value = false
-  }
 })
 </script>
 
@@ -75,7 +97,7 @@ onMounted(async () => {
             </div>
           </div>
           <div class="hero-image">
-            <img src="/img/logo.jpg" alt="Tez Jumush" />
+            <img :src="logoImg" alt="Tez Jumush" />
           </div>
         </div>
       </div>
@@ -107,7 +129,7 @@ onMounted(async () => {
             </p>
           </div>
           <div class="about-image">
-            <img src="/img/logo.jpg" alt="Tez Jumush" width="200" />
+            <img :src="logoImg" alt="Tez Jumush" width="200" />
           </div>
         </div>
       </div>
