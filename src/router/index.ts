@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { i18n } from '../utils/i18n'
+import { i18n, TranslationLanguages } from '../utils/i18n'
 
 const routes = [
   {
@@ -88,8 +88,8 @@ function checkAuthentication(): { isAuthenticated: boolean; user: any | null } {
 }
 
 router.beforeEach((to, from, next) => {
-  const locale = to.params.locale as string
-  if (locale && ['ru', 'kg'].includes(locale)) {
+  const locale = to.params.locale as TranslationLanguages | undefined
+  if (locale && (locale === 'ru' || locale === 'kg')) {
     i18n.global.locale.value = locale
     localStorage.setItem('preferredLanguage', locale)
   }

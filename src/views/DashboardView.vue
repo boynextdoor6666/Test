@@ -583,19 +583,20 @@ const applyForJob = (job: Job) => {
 const updateApplicationStatus = (jobId: number, applicantId: number, newStatus: string) => {
   // Обновляем статус заявки в общем списке вакансий
   const jobIndex = jobs.value.findIndex((job) => job.id === jobId)
+  const job = jobs.value[jobIndex]
 
-  if (jobIndex !== -1 && jobs.value[jobIndex].applications) {
-    const appIndex = jobs.value[jobIndex].applications.findIndex(
+  if (jobIndex !== -1 && job?.applications) {
+    const appIndex = job.applications.findIndex(
       (app) => app.applicantId === applicantId,
     )
 
-    if (appIndex !== -1) {
-      jobs.value[jobIndex].applications[appIndex].status = newStatus
+    if (appIndex !== -1 && job.applications[appIndex]) {
+      job.applications[appIndex].status = newStatus
       localStorage.setItem('jobs', JSON.stringify(jobs.value))
 
       // Если статус "принято", обновляем статус самой вакансии
       if (newStatus === 'accepted') {
-        jobs.value[jobIndex].status = 'in-progress'
+        job.status = 'in-progress'
         localStorage.setItem('jobs', JSON.stringify(jobs.value))
       }
     }
@@ -604,6 +605,8 @@ const updateApplicationStatus = (jobId: number, applicantId: number, newStatus: 
 
 // Функция для отмены отклика на вакансию (для работника)
 const cancelApplication = (jobId: number) => {
+  if (!user.value?.fullName) return
+
   if (confirm('Вы уверены, что хотите отменить отклик на эту вакансию?')) {
     // Удаляем из списка принятых вакансий
     const jobIndex = myJobs.value.findIndex((job) => job.id === jobId)
@@ -613,12 +616,14 @@ const cancelApplication = (jobId: number) => {
 
       // Удаляем заявку из общего списка вакансий
       const allJobIndex = jobs.value.findIndex((job) => job.id === jobId)
-      if (allJobIndex !== -1 && jobs.value[allJobIndex].applications) {
-        const appIndex = jobs.value[allJobIndex].applications.findIndex(
+      const job = jobs.value[allJobIndex]
+      
+      if (allJobIndex !== -1 && job?.applications) {
+        const appIndex = job.applications.findIndex(
           (app) => app.applicantName === user.value.fullName,
         )
         if (appIndex !== -1) {
-          jobs.value[allJobIndex].applications.splice(appIndex, 1)
+          job.applications.splice(appIndex, 1)
           localStorage.setItem('jobs', JSON.stringify(jobs.value))
         }
       }
