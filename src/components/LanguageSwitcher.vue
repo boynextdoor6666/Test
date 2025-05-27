@@ -73,7 +73,7 @@ onUnmounted(() => {
       <i class="fas fa-chevron-down"></i>
     </button>
     <div v-if="isOpen" class="lang-dropdown">
-      <button v-for="lang in languages" :key="lang.code" @click="selectLanguage(lang.code)" class="lang-option" :class="{ active: lang.code === currentLocale }">
+      <button v-for="lang in languages" :key="lang.code" @click="() => selectLanguage(lang.code)" class="lang-option" :class="{ active: lang.code === currentLocale }">
         <span :class="['flag', lang.flag]"></span>
         <span class="lang-name">{{ lang.name }}</span>
         <span v-if="lang.code === currentLocale" class="checkmark">✓</span>
