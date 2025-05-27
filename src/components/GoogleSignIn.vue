@@ -42,11 +42,10 @@ const retryCount = ref(0)
 const maxRetries = 3
 
 // Обработка ответа от Google
-function handleCredentialResponse(response: any) {
+async function handleCredentialResponse(response: any) {
   try {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 3000)
-    
     const res = await fetch(import.meta.env.VITE_API_URL + '/health', {
       signal: controller.signal
     })
@@ -71,30 +70,6 @@ onMounted(async () => {
     showMode.value = true
   }
 })
-
-// Декодирование JWT токена с улучшенной обработкой ошибок
-function parseJwt(token: string) {
-  try {
-    const base64Url = token.split('.')[1]
-    if (!base64Url) {
-      throw new Error('Invalid token format')
-    }
-    
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map(function (c) {
-          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-        })
-        .join('')
-    )
-    return JSON.parse(jsonPayload)
-  } catch (e) {
-    console.error('Error parsing JWT:', e)
-    return null
-  }
-}
 
 // Онлайн обработка через backend с улучшенной обработкой ошибок
 async function handleOnlineGoogleAuth(response: any) {
@@ -131,18 +106,6 @@ async function handleOnlineGoogleAuth(response: any) {
       isOnlineMode.value = false
       // handleDemoGoogleAuth(response)
     }
-  }
-}
-
-// Декодирование JWT токена
-function parseJwt(token: string) {
-  try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    return JSON.parse(window.atob(base64));
-  } catch (e) {
-    console.error("Error parsing JWT:", e);
-    return null;
   }
 }
 
@@ -253,7 +216,21 @@ onUnmounted(() => {
 })
 
 // Глобальная функция для обратной совместимости
-window.handleGoogleLogin = handleGoogleResponse
+window.handleGoogleLogin = handleCredentialResponse
+
+async function checkBackendHealth() {
+  try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 3000)
+    const res = await fetch(import.meta.env.VITE_API_URL + '/health', {
+      signal: controller.signal
+    })
+    clearTimeout(timeoutId)
+    return res.ok
+  } catch {
+    return false
+  }
+}
 </script>
 
 <style scoped>
