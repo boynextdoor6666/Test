@@ -417,6 +417,6 @@ export function logoutUser(): void {
 // Объявление глобальных типов для TypeScript
 declare global {
   interface Window {
-    google?: any
+    google?: any;
   }
 }

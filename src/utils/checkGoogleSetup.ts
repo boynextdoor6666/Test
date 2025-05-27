@@ -15,16 +15,8 @@ interface GoogleSetupCheckResult {
 // Объявляем тип для window.google
 declare global {
   interface Window {
-    google?: {
-      accounts?: {
-        id?: {
-          initialize: (config: any) => void
-          renderButton: (container: Element, options: any) => void
-          prompt: (callback: (notification: any) => void) => void
-        }
-      }
-    }
-    checkGoogleSetup?: () => GoogleSetupCheckResult
+    google?: any;
+    checkGoogleSetup?: () => GoogleSetupCheckResult;
   }
 }
 

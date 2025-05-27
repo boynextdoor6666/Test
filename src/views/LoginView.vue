@@ -59,8 +59,8 @@ async function handleOnlineLogin() {
       password: loginForm.value.password
     })
     const userData = {
-      ...response.user,
-      token: response.token
+      ...response.data.user,
+      token: response.data.token
     }
     localStorage.setItem('user', JSON.stringify(userData))
     const redirectPath = (route.query.redirect as string) || '/'

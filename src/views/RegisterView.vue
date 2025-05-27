@@ -70,12 +70,13 @@ const removePhoto = () => {
 
 // Типы ошибок валидации
 interface ValidationErrors {
-  name: string
-  email: string
-  phone: string
-  password: string
-  confirmPassword: string
-  termsAccepted: string
+  [key: string]: string;
+  name: string;
+  email: string;
+  phone: string;
+  password: string;
+  confirmPassword: string;
+  termsAccepted: string;
 }
 
 // Валидация
@@ -187,8 +188,8 @@ const handleSubmit = async () => {
         })
         // Сохраняем пользователя с токеном
         const userData = {
-          ...response.user,
-          token: response.token
+          ...response.data.user,
+          token: response.data.token
         }
         localStorage.setItem('user', JSON.stringify(userData))
         isLoading.value = false

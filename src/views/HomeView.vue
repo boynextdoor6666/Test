@@ -226,7 +226,7 @@ onMounted(() => {
             v-for="job in recentJobs" 
             :key="job.id" 
             :job="job"
-            @error="(err) => console.warn('Job card error:', err)"
+            @error="(err: any) => console.warn('Job card error:', err)"
           />
         </div>
         

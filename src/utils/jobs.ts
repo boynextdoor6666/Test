@@ -1,4 +1,4 @@
-import { Job } from './types'
+import type { Job } from '@/utils/api'
 
 export const jobs: Job[] = [
   {
@@ -13,6 +13,11 @@ export const jobs: Job[] = [
     category: 'Уборка',
     requirements: ['Опыт работы', 'Пунктуальность', 'Ответственность'],
     employer: 'Частное лицо',
+    urgency: 'medium',
+    employment_type: 'part-time',
+    user_id: 1,
+    created_at: '2023-06-01T09:00:00.000Z',
+    updated_at: '2023-06-01T09:00:00.000Z',
   },
   {
     id: 2,
@@ -26,6 +31,11 @@ export const jobs: Job[] = [
     category: 'Строительство',
     requirements: ['Физическая выносливость', 'Готовность к физическому труду'],
     employer: 'Строительная компания "Курулуш"',
+    urgency: 'high',
+    employment_type: 'full-time',
+    user_id: 2,
+    created_at: '2023-06-02T09:00:00.000Z',
+    updated_at: '2023-06-02T09:00:00.000Z',
   },
   {
     id: 3,
@@ -39,6 +49,11 @@ export const jobs: Job[] = [
     category: 'Доставка',
     requirements: ['Знание города', 'Ответственность', 'Наличие телефона'],
     employer: 'ОсОО "Документ Сервис"',
+    urgency: 'low',
+    employment_type: 'freelance',
+    user_id: 3,
+    created_at: '2023-06-03T09:00:00.000Z',
+    updated_at: '2023-06-03T09:00:00.000Z',
   },
   {
     id: 4,
@@ -52,6 +67,11 @@ export const jobs: Job[] = [
     category: 'Разное',
     requirements: ['Физическая сила', 'Аккуратность при обращении с вещами'],
     employer: 'Частное лицо',
+    urgency: 'medium',
+    employment_type: 'contract',
+    user_id: 4,
+    created_at: '2023-06-04T09:00:00.000Z',
+    updated_at: '2023-06-04T09:00:00.000Z',
   },
   {
     id: 5,
@@ -65,6 +85,11 @@ export const jobs: Job[] = [
     category: 'Няни',
     requirements: ['Опыт работы с детьми', 'Рекомендации', 'Доброжелательность'],
     employer: 'Частное лицо',
+    urgency: 'medium',
+    employment_type: 'part-time',
+    user_id: 5,
+    created_at: '2023-06-05T09:00:00.000Z',
+    updated_at: '2023-06-05T09:00:00.000Z',
   },
   {
     id: 6,
@@ -78,5 +103,10 @@ export const jobs: Job[] = [
     category: 'Ремонт',
     requirements: ['Опыт сборки мебели', 'Наличие базовых инструментов'],
     employer: 'Частное лицо',
+    urgency: 'medium',
+    employment_type: 'contract',
+    user_id: 6,
+    created_at: '2023-06-06T09:00:00.000Z',
+    updated_at: '2023-06-06T09:00:00.000Z',
   },
 ] 

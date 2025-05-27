@@ -47,11 +47,11 @@ interface EditProfileData {
 }
 
 interface EditProfileErrors {
-  fullName: string
-  phone: string
-  email: string
-  age: string
-  [key: string]: string // Index signature
+  [key: string]: string;
+  fullName: string;
+  phone: string;
+  email: string;
+  age: string;
 }
 
 // Reference variables with proper types
@@ -379,7 +379,7 @@ const openEditProfileModal = () => {
   profilePhoto.error = ''
 
   // Сбрасываем ошибки
-  Object.keys(editProfileErrors.value).forEach((key) => (editProfileErrors.value[key] = ''))
+  Object.keys(editProfileErrors.value).forEach((key) => ((editProfileErrors.value as any)[key] = ''))
 }
 
 const closeEditProfileModal = () => {
@@ -692,8 +692,8 @@ const editJobErrors = ref({
 const openAddJobModal = () => {
   showAddJobModal.value = true
   showEditJobModal.value = false
-  Object.keys(newJob.value).forEach((key) => (newJob.value[key] = ''))
-  Object.keys(addJobErrors.value).forEach((key) => (addJobErrors.value[key] = ''))
+  Object.keys(newJob.value).forEach((key) => ((newJob.value as any)[key] = ''))
+  Object.keys(addJobErrors.value).forEach((key) => ((addJobErrors.value as any)[key] = ''))
 
   // Предзаполняем данные
   newJob.value.date = new Date().toISOString().split('T')[0]
@@ -707,12 +707,12 @@ const closeAddJobModal = () => {
 }
 
 // --- Редактирование вакансии ---
-const openEditJobModal = (job) => {
+const openEditJobModal = (job: any) => {
   showAddJobModal.value = false
   showEditJobModal.value = true
 
   // Очистка ошибок
-  Object.keys(editJobErrors.value).forEach((key) => (editJobErrors.value[key] = ''))
+  Object.keys(editJobErrors.value).forEach((key) => ((editJobErrors.value as any)[key] = ''))
 
   // Копируем данные редактируемой вакансии
   editJob.value = { ...job }
@@ -728,7 +728,7 @@ const closeEditJobModal = () => {
 const handleEditJob = () => {
   // Валидация
   let valid = true
-  Object.keys(editJobErrors.value).forEach((key) => (editJobErrors.value[key] = ''))
+  Object.keys(editJobErrors.value).forEach((key) => ((editJobErrors.value as any)[key] = ''))
 
   if (!editJob.value.title) {
     editJobErrors.value.title = 'Введите название'
@@ -759,8 +759,8 @@ const handleEditJob = () => {
 
   // Обновление вакансии в массиве
   const index = jobs.value.findIndex((job) => job.id === currentJobId.value)
-  if (index !== -1) {
-    jobs.value[index] = { ...editJob.value }
+  if (index !== -1 && currentJobId.value !== null) {
+    jobs.value[index] = { ...editJob.value, id: currentJobId.value }
     localStorage.setItem('jobs', JSON.stringify(jobs.value))
     showEditJobModal.value = false
     currentJobId.value = null
@@ -768,7 +768,7 @@ const handleEditJob = () => {
 }
 
 // --- Удаление вакансии ---
-const handleDeleteJob = (jobId) => {
+const handleDeleteJob = (jobId: number) => {
   if (confirm('Вы уверены, что хотите удалить эту вакансию?')) {
     const index = jobs.value.findIndex((job) => job.id === jobId)
     if (index !== -1) {
@@ -781,7 +781,7 @@ const handleDeleteJob = (jobId) => {
 const handleAddJob = () => {
   // Валидация
   let valid = true
-  Object.keys(addJobErrors.value).forEach((key) => (addJobErrors.value[key] = ''))
+  Object.keys(addJobErrors.value).forEach((key) => ((addJobErrors.value as any)[key] = ''))
   if (!newJob.value.title) {
     addJobErrors.value.title = 'Введите название'
     valid = false
@@ -1207,7 +1207,7 @@ const handleAddJob = () => {
               </div>
 
               <div class="applications-count">
-                <span>Всего заявок: {{ job.applications.length }}</span>
+                <span>Всего заявок: {{ job.applications ? job.applications.length : 0 }}</span>
               </div>
 
               <div class="applicants-list">

@@ -42,8 +42,8 @@ async function applyToJob() {
   applyMessage.value = ''
   try {
     const res = await jobsAPI.apply(jobId)
-    if (res.error) {
-      applyMessage.value = res.error
+    if (res.message) {
+      applyMessage.value = res.message
     } else {
       applyMessage.value = 'Вы успешно откликнулись!'
     }

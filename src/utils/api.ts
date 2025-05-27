@@ -25,7 +25,7 @@ export interface Job {
   salary_amount?: number
   location: string
   phone: string
-  date?: string
+  date: string
   category: string
   requirements: string[]
   employer: string
@@ -36,6 +36,7 @@ export interface Job {
   applications_count?: number
   created_at: string
   updated_at: string
+  applications?: any[]
 }
 
 export interface Application {
@@ -125,17 +126,17 @@ api.interceptors.response.use(
     } else if (error.response?.status === 403) {
       // Запрещенный доступ
       console.warn('Forbidden access')
-    } else if (error.response?.status >= 500) {
+    } else if (error.response && error.response.status !== undefined && error.response.status >= 500) {
       // Ошибки сервера
-      console.error('Server error:', error.response?.status)
-    } else if (error.code === 'NETWORK_ERROR' || error.message.includes('Network Error')) {
+      console.error('Server error:', error.response.status)
+    } else if ((error as any).code === 'NETWORK_ERROR' || error.message.includes('Network Error')) {
       // Сетевые ошибки - переключаемся в оффлайн режим
-      console.warn('Network error detected, switching to offline mode')
-      error.isNetworkError = true
-    } else if (error.code === 'ECONNABORTED') {
+      { console.warn('Network error detected, switching to offline mode'); }
+      (error as any).isNetworkError = true
+    } else if ((error as any).code === 'ECONNABORTED') {
       // Таймаут
-      console.warn('Request timeout')
-      error.isTimeout = true
+      { console.warn('Request timeout'); }
+      (error as any).isTimeout = true
     }
 
     return Promise.reject(error)

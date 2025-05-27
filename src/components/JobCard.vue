@@ -103,7 +103,7 @@ function formatDate(dateString: string): string {
       </div>
       <div class="job-applications" v-if="hasApplications && isEmployer">
         <i class="fas fa-user-check"></i>
-        <span>{{ t('applicationCount') }}: {{ job.applications?.length }}</span>
+        <span>{{ t('applicationCount') }}: {{ job.applications ? job.applications.length : 0 }}</span>
       </div>
     </div>
 

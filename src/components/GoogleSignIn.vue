@@ -53,8 +53,7 @@ interface GoogleCredentialResponse {
 
 declare global {
   interface Window {
-    google: any
-    handleGoogleLogin: (response: GoogleCredentialResponse) => void
+    google?: any;
   }
 }
 
@@ -132,14 +131,14 @@ async function handleOnlineGoogleAuth(response: GoogleCredentialResponse) {
       props.isRegister ? 'worker' : undefined
     )
 
-    if (!result || !result.user) {
+    if (!result || !result.data?.user) {
       throw new Error('Неверный ответ от сервера')
     }
 
     // Сохраняем пользователя с токеном
     const userData = {
-      ...result.user,
-      token: result.token || 'fallback_token_' + Date.now(),
+      ...result.data.user,
+      token: result.data.token || 'fallback_token_' + Date.now(),
       authProvider: 'google'
     }
     
@@ -154,7 +153,7 @@ async function handleOnlineGoogleAuth(response: GoogleCredentialResponse) {
     error.value = errorMessage
     
     // Если ошибка связана с сетью, переключаемся на демо режим
-    if (err.code === 'NETWORK_ERROR' || err.message.includes('fetch')) {
+    if ((err as any).code === 'NETWORK_ERROR' || err.message.includes('fetch')) {
       isOnlineMode.value = false
       handleDemoGoogleAuth(response)
     }
@@ -343,8 +342,8 @@ const retryInit = async () => {
     if (!success) {
       throw new Error('Инициализация не удалась')
     }
-  } catch (error) {
-    console.error('Retry initialization failed:', error)
+  } catch (err) {
+    console.error('Retry initialization failed:', err)
     error.value = `Попытка ${retryCount.value}/${maxRetries} не удалась`
   }
 }
@@ -365,13 +364,8 @@ onMounted(async () => {
 
 // Очистка при размонтировании
 onUnmounted(() => {
-  if (window.handleGoogleLogin) {
-    delete window.handleGoogleLogin
-  }
+  // Удалить строку window.handleGoogleLogin = undefined as any
 })
-
-// Глобальная функция для обратной совместимости
-window.handleGoogleLogin = handleGoogleResponse
 </script>
 
 <style scoped>

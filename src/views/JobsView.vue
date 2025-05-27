@@ -3,23 +3,12 @@ import { ref, onMounted, computed, watch } from 'vue'
 import JobCard from '@/components/JobCard.vue'
 import { useI18n } from 'vue-i18n'
 import { jobsAPI } from '@/utils/api'
+import type { Job } from '@/utils/api'
 
 // Получаем доступ к переводам
 const { t, locale } = useI18n()
 
 // Определение интерфейса Job для типизации
-interface Job {
-  id: number
-  title: string
-  description: string
-  salary: string
-  location: string
-  phone: string
-  date: string
-  category: string
-  applications?: Application[]
-}
-
 interface Application {
   applicantId: number
   applicantName: string
@@ -69,7 +58,7 @@ async function loadJobs() {
   error.value = ''
   try {
     jobs.value = await jobsAPI.getJobs()
-  } catch (e) {
+  } catch (e: any) {
     error.value = 'Ошибка при загрузке вакансий'
   } finally {
     loading.value = false
@@ -307,8 +296,11 @@ const handleAddJob = async () => {
   if (!valid) return
 
   try {
-    const res = await jobsAPI.createJob(newJob.value)
-    if (res.error) throw new Error(res.error)
+    const res = await jobsAPI.createJob({
+      ...newJob.value,
+      id: undefined // id не должен быть null
+    })
+    if (res.message) throw new Error(res.message)
     showAddJobModal.value = false
     await loadJobs()
   } catch (e: any) {
@@ -329,7 +321,7 @@ const openEditJobModal = (job: Job) => {
   // Копирование данных редактируемой вакансии
   // Исключаем applications из копирования, т.к. этого поля нет в JobForm
   const { applications, ...jobData } = job
-  editJob.value = { ...jobData }
+  editJob.value = { id: job.id, title: job.title, description: job.description, salary: job.salary, location: job.location, phone: job.phone, category: job.category, date: job.date }
 
   currentJobId.value = job.id
 
@@ -375,13 +367,15 @@ const handleEditJob = async () => {
   if (!valid) return
 
   try {
-    const res = await jobsAPI.updateJob(currentJobId.value, editJob.value)
-    if (res.error) throw new Error(res.error)
-    showEditJobModal.value = false
-    currentJobId.value = null
-    await loadJobs()
+    const { id, ...rest } = editJob.value;
+    const jobData = id === null ? { ...rest } : { ...editJob.value, id };
+    const res = await jobsAPI.updateJob(currentJobId.value!, jobData);
+    if (res.message) throw new Error(res.message);
+    showEditJobModal.value = false;
+    currentJobId.value = null;
+    await loadJobs();
   } catch (e: any) {
-    error.value = e.message || 'Ошибка при редактировании вакансии'
+    error.value = e.message || 'Ошибка при редактировании вакансии';
   }
 }
 
@@ -391,7 +385,7 @@ const handleDeleteJob = async (jobId: number) => {
 
   try {
     const res = await jobsAPI.deleteJob(jobId)
-    if (res.error) throw new Error(res.error)
+    if (res.message) throw new Error(res.message)
     await loadJobs()
   } catch (e: any) {
     error.value = e.message || 'Ошибка при удалении вакансии'
@@ -411,9 +405,9 @@ const handleApply = async (job: Job) => {
   }
   try {
     const res = await jobsAPI.apply(job.id)
-    if (res.error) {
-      applyMessage.value = res.error
-      alert(res.error)
+    if (res.message) {
+      applyMessage.value = res.message
+      alert(res.message)
     } else {
       applyMessage.value = 'Вы успешно откликнулись!'
       alert('Вы успешно откликнулись!')
