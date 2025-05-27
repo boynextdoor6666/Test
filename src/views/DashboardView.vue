@@ -562,17 +562,20 @@ const applyForJob = (job: Job) => {
   // Обновляем статус вакансии в общем списке
   const jobIndex = jobs.value.findIndex((j) => j.id === job.id)
   if (jobIndex !== -1) {
-    // Добавляем информацию о том, что есть заявка
-    if (!jobs.value[jobIndex].applications) {
-      jobs.value[jobIndex].applications = []
+    const currentJob = jobs.value[jobIndex]
+    if (currentJob) {
+      // Добавляем информацию о том, что есть заявка
+      if (!currentJob.applications) {
+        currentJob.applications = []
+      }
+      currentJob.applications.push({
+        applicantId: Date.now(),
+        applicantName: user.value.fullName,
+        appliedAt: new Date().toISOString(),
+        status: 'new',
+      })
+      localStorage.setItem('jobs', JSON.stringify(jobs.value))
     }
-    jobs.value[jobIndex].applications.push({
-      applicantId: Date.now(),
-      applicantName: user.value.fullName,
-      appliedAt: new Date().toISOString(),
-      status: 'new',
-    })
-    localStorage.setItem('jobs', JSON.stringify(jobs.value))
   }
 
   // Показываем уведомление

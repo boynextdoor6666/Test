@@ -8,6 +8,7 @@ import { useRouter } from 'vue-router'
 const { locale } = useI18n()
 const router = useRouter()
 const isOpen = ref(false)
+const dropdownRef = ref<HTMLElement | null>(null)
 
 const languages = [
   { code: 'ru', name: 'Русский', flag: 'flag-ru' },
@@ -45,16 +46,27 @@ const handleKeypress = (event: KeyboardEvent) => {
     selectLanguage(nextLang)
   }
 }
+
+// Обработчик клика вне компонента
+const handleClickOutside = (event: MouseEvent) => {
+  if (dropdownRef.value && !dropdownRef.value.contains(event.target as Node)) {
+    closeDropdown()
+  }
+}
+
 onMounted(() => {
   document.addEventListener('keydown', handleKeypress)
+  document.addEventListener('click', handleClickOutside)
 })
+
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeypress)
+  document.removeEventListener('click', handleClickOutside)
 })
 </script>
 
 <template>
-  <div class="language-selector" @click.outside="closeDropdown">
+  <div class="language-selector" ref="dropdownRef">
     <button @click="toggleDropdown" class="lang-trigger">
       <span :class="['flag', currentFlag]"></span>
       <span class="lang-name">{{ currentLangName }}</span>
