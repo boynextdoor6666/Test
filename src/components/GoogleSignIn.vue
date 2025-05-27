@@ -109,6 +109,18 @@ async function handleOnlineGoogleAuth(response: any) {
   }
 }
 
+// Декодирование JWT токена
+function parseJwt(token: string) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(window.atob(base64));
+  } catch (e) {
+    console.error("Error parsing JWT:", e);
+    return null;
+  }
+}
+
 // Инициализация Google Sign-In
 function initializeGoogleSignIn() {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
