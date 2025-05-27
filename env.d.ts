@@ -1,1 +1,1 @@
-/// <reference types="vite/client" />
+// Пустой файл для поддержки tsconfig include 'env.d.ts' 
