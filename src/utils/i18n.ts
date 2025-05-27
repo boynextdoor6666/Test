@@ -393,15 +393,9 @@ export const i18n = createI18n({
 })
 
 // Функция для переключения языка
-export function switchLanguage() {
-  // Приведение типов нужно из-за особенностей TypeScript
-  const i18nGlobal = i18n.global as any
-  const currentLocale = i18nGlobal.locale.value
-  const newLocale = currentLocale === 'ru' ? 'kg' : 'ru'
-
-  // Устанавливаем новый язык
-  i18nGlobal.locale.value = newLocale
-  localStorage.setItem('preferredLanguage', newLocale)
+export function switchLanguage(langCode: TranslationLanguages) {
+  i18n.global.locale.value = langCode
+  localStorage.setItem('locale', langCode)
 }
 
 // Экспортируем тип ключей перевода
