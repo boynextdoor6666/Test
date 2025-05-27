@@ -270,5 +270,125 @@ function handleRegister() {
   color: var(--text-color);
 }
 
-/* Остальные стили аналогичны предыдущей версии */
+/* Стили для блока социального входа */
+.social-login {
+  margin-top: 20px;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 15px 0;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.divider span {
+  padding: 0 15px;
+  font-size: 14px;
+  color: #757575;
+  background: #fff;
+}
+
+/* Улучшение внешнего вида демо-аккаунтов */
+.demo-accounts {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f9f9f9;
+  border-radius: 6px;
+  border: 1px dashed #ddd;
+}
+
+.demo-accounts-title {
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #555;
+  font-size: 14px;
+}
+
+.demo-account {
+  padding: 8px;
+  margin-bottom: 8px;
+  background: #fff;
+  border-radius: 4px;
+  font-size: 13px;
+  border: 1px solid #eee;
+}
+
+.demo-account:last-child {
+  margin-bottom: 0;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-control {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 16px;
+  transition: border-color 0.3s;
+}
+
+.form-control:focus {
+  border-color: var(--primary-color);
+  outline: none;
+}
+
+.error-message {
+  color: var(--danger-color);
+  margin: 10px 0;
+  padding: 10px;
+  background-color: #fff0f0;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.login-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-dark);
+}
+
+.btn-outline {
+  background-color: transparent;
+  border: 1px solid var(--primary-color);
+  color: var(--primary-color);
+}
+
+.btn-outline:hover {
+  background-color: var(--primary-light);
+}
+
+.btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
 </style>

@@ -3,41 +3,20 @@
   <div class="google-login-container">
     <div 
       id="google-signin-button" 
-      v-if="hasClientId && isGoogleLoaded"
       class="google-signin-button"
     ></div>
-    
-    <div v-else-if="!hasClientId" class="google-fallback">
-      <div class="google-config-warning">
-        <i class="fas fa-exclamation-triangle"></i>
-        <p>Google аутентификация не настроена</p>
-        <small>Проверьте переменную VITE_GOOGLE_CLIENT_ID</small>
-      </div>
-    </div>
-
-    <div v-else class="loading-indicator">
-      <i class="fas fa-spinner fa-spin"></i>
-      <span>Загрузка Google Auth...</span>
-    </div>
     
     <div v-if="error" class="error-message">
       <i class="fas fa-exclamation-circle"></i>
       {{ error }}
       <button @click="retryInit" class="retry-btn">Попробовать снова</button>
     </div>
-
-    <!-- Индикатор режима работы -->
-    <div v-if="showMode" class="auth-mode" :class="{ online: isOnlineMode }">
-      <i :class="isOnlineMode ? 'fas fa-cloud' : 'fas fa-laptop'"></i>
-      {{ isOnlineMode ? 'Онлайн' : 'Демо' }} режим
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, onUnmounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { authAPI } from '@/utils/api'
 
 const props = defineProps({
   isRegister: {
@@ -46,30 +25,21 @@ const props = defineProps({
   }
 })
 
-interface GoogleCredentialResponse {
-  credential: string
-  select_by: string
-}
-
+// Типы для Google API
 declare global {
   interface Window {
-    google?: any;
+    google: any
+    handleGoogleLogin: (response: GoogleCredentialResponse) => void
   }
 }
 
 const router = useRouter()
-const isGoogleLoaded = ref(false)
 const error = ref('')
-const hasClientId = ref(!!import.meta.env.VITE_GOOGLE_CLIENT_ID)
-const isOnlineMode = ref(false)
-const showMode = ref(false)
 const retryCount = ref(0)
 const maxRetries = 3
 
-const buttonText = computed(() => props.isRegister ? 'signup_with' : 'continue_with')
-
-// Проверяем доступность backend с таймаутом
-const checkBackendHealth = async (): Promise<boolean> => {
+// Обработка ответа от Google
+function handleCredentialResponse(response: any) {
   try {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 3000) // 3 секунды таймаут
@@ -131,21 +101,22 @@ async function handleOnlineGoogleAuth(response: GoogleCredentialResponse) {
       props.isRegister ? 'worker' : undefined
     )
 
-    if (!result || !result.data?.user) {
+    if (!result || !result.user) {
       throw new Error('Неверный ответ от сервера')
     }
 
     // Сохраняем пользователя с токеном
     const userData = {
-      ...result.data.user,
-      token: result.data.token || 'fallback_token_' + Date.now(),
+      ...result.user,
+      token: result.token || 'fallback_token_' + Date.now(),
       authProvider: 'google'
-    }
+    };
     
-    localStorage.setItem('user', JSON.stringify(userData))
+    // Сохраняем пользователя
+    localStorage.setItem('user', JSON.stringify(user));
     
-    // Перенаправляем на dashboard после успешной авторизации
-    await router.push('/dashboard')
+    // Перенаправляем пользователя
+    router.push('/');
     
   } catch (err: any) {
     console.error('Google auth error:', err)
@@ -153,209 +124,118 @@ async function handleOnlineGoogleAuth(response: GoogleCredentialResponse) {
     error.value = errorMessage
     
     // Если ошибка связана с сетью, переключаемся на демо режим
-    if ((err as any).code === 'NETWORK_ERROR' || err.message.includes('fetch')) {
+    if (err.code === 'NETWORK_ERROR' || err.message.includes('fetch')) {
       isOnlineMode.value = false
       handleDemoGoogleAuth(response)
     }
   }
 }
 
-// Демо обработка для оффлайн режима с улучшенной валидацией
-function handleDemoGoogleAuth(response: GoogleCredentialResponse) {
+// Декодирование JWT токена
+function parseJwt(token: string) {
   try {
-    const userInfo = parseJwt(response.credential)
-    if (!userInfo || !userInfo.email) {
-      error.value = 'Ошибка при обработке данных Google'
-      return
-    }
-    
-    // Создаем демо пользователя
-    const googleUser = {
-      id: 'demo_' + Date.now(),
-      name: userInfo.name || `${userInfo.given_name || ''} ${userInfo.family_name || ''}`.trim() || 'Google User',
-      email: userInfo.email,
-      phone: '',
-      userType: props.isRegister ? 'worker' : 'worker',
-      photo: userInfo.picture || '',
-      age: 0,
-      hasOtherJobs: false,
-      skills: [],
-      experience: '',
-      authProvider: 'google',
-      token: 'demo_google_token_' + Date.now()
-    }
-    
-    // Сохраняем в демо-хранилище
-    const demoUsers = JSON.parse(localStorage.getItem('demoUsers') || '[]')
-    const existingUserIndex = demoUsers.findIndex((u: any) => u.email === googleUser.email)
-    
-    if (existingUserIndex >= 0) {
-      demoUsers[existingUserIndex] = googleUser
-    } else {
-      demoUsers.push(googleUser)
-    }
-    
-    localStorage.setItem('demoUsers', JSON.stringify(demoUsers))
-    localStorage.setItem('user', JSON.stringify(googleUser))
-    
-    router.push('/dashboard')
-  } catch (err) {
-    console.error('Demo Google login error:', err)
-    error.value = 'Ошибка при входе через Google'
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(window.atob(base64));
+  } catch (e) {
+    console.error("Error parsing JWT:", e);
+    return null;
   }
 }
 
-// Основная обработка Google ответа
-const handleGoogleResponse = async (response: GoogleCredentialResponse) => {
-  error.value = ''
-  
-  if (!response || !response.credential) {
-    error.value = 'Неверный ответ от Google'
-    return
-  }
-  
-  try {
-    if (isOnlineMode.value) {
-      await handleOnlineGoogleAuth(response)
-    } else {
-      handleDemoGoogleAuth(response)
-    }
-  } catch (err) {
-    console.error('Google response handling error:', err)
-    error.value = 'Произошла ошибка при авторизации'
-  }
-}
-
-// Инициализация Google Sign-In с улучшенной обработкой ошибок
-const initializeGoogleSignIn = () => {
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+// Инициализация Google Sign-In
+function initializeGoogleSignIn() {
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   
   if (!clientId) {
-    console.warn('Google Client ID не настроен')
-    error.value = 'Google Client ID не настроен'
-    return false
+    error.value = "Отсутствует VITE_GOOGLE_CLIENT_ID. Создайте .env файл в корне проекта.";
+    return false;
   }
-
-  if (!window.google?.accounts?.id) {
-    error.value = 'Google API не загружен'
-    return false
-  }
-
+  
   try {
-    // Правильная настройка для Railway и других хостингов
-    const currentOrigin = window.location.origin
+    if (!window.google?.accounts?.id) {
+      console.error("Google API not loaded correctly");
+      return false;
+    }
+    
+    const buttonElement = document.getElementById('google-signin-button');
+    if (!buttonElement) {
+      console.error("Button element not found");
+      return false;
+    }
     
     window.google.accounts.id.initialize({
       client_id: clientId,
-      callback: handleGoogleResponse,
+      callback: handleCredentialResponse,
       auto_select: false,
-      cancel_on_tap_outside: true,
-      ux_mode: 'popup',
-      context: props.isRegister ? 'signup' : 'signin'
-    })
-
-    const buttonElement = document.getElementById('google-signin-button')
-    if (!buttonElement) {
-      error.value = 'Не найден элемент для кнопки Google'
-      return false
-    }
-
+      cancel_on_tap_outside: true
+    });
+    
     window.google.accounts.id.renderButton(buttonElement, {
       theme: 'outline',
       size: 'large',
-      width: '100%',
-      text: buttonText.value,
-      shape: 'rectangular',
-      logo_alignment: 'left'
-    })
+      text: props.isRegister ? 'signup_with' : 'signin_with',
+      width: '100%'
+    });
     
-    isGoogleLoaded.value = true
-    return true
+    return true;
   } catch (err) {
-    console.error('Error initializing Google Sign-In:', err)
-    error.value = 'Ошибка инициализации Google Auth'
-    return false
+    console.error("Google initialization error:", err);
+    error.value = "Ошибка инициализации Google Auth";
+    return false;
   }
 }
 
-// Загрузка Google Script с retry логикой
-const loadGoogleScript = (): Promise<any> => {
+// Загрузка Google Script
+function loadGoogleScript() {
   return new Promise((resolve, reject) => {
+    // Если скрипт уже загружен
     if (window.google?.accounts?.id) {
-      resolve(window.google)
-      return
-    }
-
-    // Удаляем существующий скрипт если есть
-    const existingScript = document.querySelector('script[src*="accounts.google.com"]')
-    if (existingScript) {
-      existingScript.remove()
-    }
-
-    const script = document.createElement('script')
-    script.src = 'https://accounts.google.com/gsi/client'
-    script.async = true
-    script.defer = true
-    
-    let timeoutId: number
-    
-    script.onload = () => {
-      clearTimeout(timeoutId)
-      // Даем время на инициализацию Google API
-      setTimeout(() => {
-        if (window.google?.accounts?.id) {
-          resolve(window.google)
-        } else {
-          reject(new Error('Google API не инициализирован после загрузки'))
-        }
-      }, 500)
+      resolve(window.google);
+      return;
     }
     
-    script.onerror = () => {
-      clearTimeout(timeoutId)
-      reject(new Error('Не удалось загрузить Google Script'))
-    }
-    
-    // Таймаут для загрузки скрипта
-    timeoutId = setTimeout(() => {
-      reject(new Error('Таймаут загрузки Google Script'))
-    }, 10000)
-    
-    document.head.appendChild(script)
-  })
+    const script = document.createElement('script');
+    script.src = "https://accounts.google.com/gsi/client";
+    script.onload = () => setTimeout(() => resolve(window), 300);
+    script.onerror = (e) => reject(e);
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
+  });
 }
 
 // Функция повторной инициализации
-const retryInit = async () => {
+async function retryInit() {
   if (retryCount.value >= maxRetries) {
-    error.value = 'Превышено максимальное количество попыток. Попробуйте обновить страницу.'
-    return
+    error.value = "Превышено количество попыток. Обновите страницу.";
+    return;
   }
   
-  retryCount.value++
-  error.value = ''
-  isGoogleLoaded.value = false
+  retryCount.value++;
+  error.value = `Повторная попытка ${retryCount.value}/${maxRetries}...`;
   
   try {
-    await loadGoogleScript()
-    const success = initializeGoogleSignIn()
-    if (!success) {
-      throw new Error('Инициализация не удалась')
+    await loadGoogleScript();
+    const success = initializeGoogleSignIn();
+    
+    if (!success && retryCount.value < maxRetries) {
+      setTimeout(() => retryInit(), 1500);
     }
-  } catch (err) {
-    console.error('Retry initialization failed:', err)
+  } catch (error) {
+    console.error('Retry initialization failed:', error)
     error.value = `Попытка ${retryCount.value}/${maxRetries} не удалась`
   }
 }
 
 onMounted(async () => {
-  if (!hasClientId.value) {
-    return
-  }
-  
   try {
-    await loadGoogleScript()
-    initializeGoogleSignIn()
+    await loadGoogleScript();
+    const success = initializeGoogleSignIn();
+    
+    if (!success) {
+      setTimeout(() => retryInit(), 1000);
+    }
   } catch (err) {
     console.error('Failed to load Google Sign-In:', err)
     error.value = 'Не удалось загрузить Google Sign-In'
@@ -364,20 +244,32 @@ onMounted(async () => {
 
 // Очистка при размонтировании
 onUnmounted(() => {
-  // Удалить строку window.handleGoogleLogin = undefined as any
+  if (window.handleGoogleLogin) {
+    delete window.handleGoogleLogin
+  }
 })
+
+// Глобальная функция для обратной совместимости
+window.handleGoogleLogin = handleGoogleResponse
 </script>
 
 <style scoped>
 .google-login-container {
   width: 100%;
   position: relative;
+  margin: 5px 0;
 }
 
 .google-signin-button {
   width: 100%;
   display: flex;
   justify-content: center;
+  transform: scale(1);
+  transition: transform 0.2s ease-in-out;
+}
+
+.google-signin-button:hover {
+  transform: scale(1.02);
 }
 
 .google-fallback {
@@ -410,13 +302,37 @@ onUnmounted(() => {
 }
 
 .error-message {
-  color: var(--danger-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #e74c3c;
   font-size: 14px;
   text-align: center;
   margin-top: 10px;
-  padding: 8px;
-  background-color: rgba(255, 0, 0, 0.05);
+  padding: 10px;
+  background-color: rgba(231, 76, 60, 0.1);
+  border-radius: 6px;
+}
+
+.error-message i {
+  font-size: 16px;
+}
+
+.retry-btn {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
   border-radius: 4px;
+  padding: 5px 12px;
+  margin-left: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color 0.2s;
+}
+
+.retry-btn:hover {
+  background-color: #c0392b;
 }
 
 .auth-mode {
@@ -442,15 +358,45 @@ onUnmounted(() => {
   font-size: 12px;
 }
 
+/* Улучшенные стили для кнопки Google */
 :deep(.g_id_signin) {
   width: 100% !important;
+  display: block !important;
 }
 
 :deep(.g_id_signin > div) {
   width: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
 }
 
 :deep(.g_id_signin iframe) {
   width: 100% !important;
+  max-width: 400px !important;
+  margin: 0 auto !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1) !important;
+  transition: box-shadow 0.3s !important;
+}
+
+:deep(.g_id_signin iframe:hover) {
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Адаптивные стили */
+@media (max-width: 576px) {
+  .google-signin-button {
+    transform: none;
+  }
+  
+  .error-message {
+    flex-direction: column;
+    font-size: 13px;
+  }
+  
+  .retry-btn {
+    margin-left: 0;
+    margin-top: 8px;
+  }
 }
 </style>
