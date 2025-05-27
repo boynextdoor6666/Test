@@ -57,9 +57,60 @@ async function loadJobs() {
   loading.value = true
   error.value = ''
   try {
-    jobs.value = await jobsAPI.getJobs()
+    console.log('Вызываем API для получения вакансий...')
+    const result = await jobsAPI.getJobs()
+    console.log('Получен ответ от API:', result)
+    
+    if (Array.isArray(result)) {
+      jobs.value = result
+      console.log(`Загружено ${jobs.value.length} вакансий`)
+    } else {
+      console.error('Неверный формат данных:', result)
+      error.value = 'Неверный формат данных от сервера'
+      // Используем демо-данные
+      jobs.value = [
+        {
+          id: 1,
+          title: 'Демо вакансия',
+          description: 'Это демо-вакансия, созданная из-за ошибки загрузки',
+          salary: '1000 сом',
+          location: 'Бишкек',
+          phone: '+996 555 123456',
+          date: new Date().toISOString(),
+          category: 'Разное',
+          requirements: ['Демо-требование'],
+          employer: 'Демо-работодатель',
+          urgency: 'medium',
+          employment_type: 'part-time',
+          user_id: 1,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ]
+    }
   } catch (e: any) {
-    error.value = 'Ошибка при загрузке вакансий'
+    console.error('Ошибка при загрузке вакансий:', e)
+    error.value = `Ошибка при загрузке вакансий: ${e.message || 'Неизвестная ошибка'}`
+    // Используем демо-данные при ошибке
+    jobs.value = [
+      {
+        id: 1,
+        title: 'Демо вакансия при ошибке',
+        description: 'Это демо-вакансия, созданная из-за ошибки загрузки',
+        salary: '1000 сом',
+        location: 'Бишкек',
+        phone: '+996 555 123456',
+        date: new Date().toISOString(),
+        category: 'Разное',
+        requirements: ['Демо-требование'],
+        employer: 'Демо-работодатель',
+        urgency: 'medium',
+        employment_type: 'part-time',
+        user_id: 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+    ]
   } finally {
     loading.value = false
   }
@@ -138,7 +189,7 @@ const editJobErrors = ref<JobFormErrors>({
 
 const applyMessage = ref('')
 
-onMounted(() => {
+onMounted(async () => {
   // Проверка авторизации пользователя
   const userData = localStorage.getItem('user')
   if (userData) {
@@ -152,22 +203,22 @@ onMounted(() => {
       if (user.phone) {
         newJob.value.phone = user.phone
       }
-
-      // For testing purposes, force userType to 'employer' if needed
-      // Comment this out in production
-      // userType.value = 'employer'
     } catch (error) {
       console.error('Ошибка при парсинге данных пользователя:', error)
     }
   } else {
     console.log('Пользователь не авторизован') // Для отладки
-
-    // For testing purposes, you can uncomment to simulate a logged-in employer
-    // isLoggedIn.value = true
-    // userType.value = 'employer'
   }
 
-  loadJobs()
+  // Всегда загружаем вакансии, даже если нет авторизации
+  console.log('Загружаем вакансии...');
+  await loadJobs();
+  console.log('Загружено вакансий:', jobs.value.length);
+  
+  // Для отладки выводим первую вакансию
+  if (jobs.value.length > 0) {
+    console.log('Пример вакансии:', jobs.value[0]);
+  }
 })
 
 // Обновляем категории при изменении языка

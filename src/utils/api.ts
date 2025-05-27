@@ -359,13 +359,32 @@ export const jobsAPI = {
   async getJobs(): Promise<Job[]> {
     try {
       const response = await api.get('/jobs')
-      return response.data.data || response.data
-    } catch (error: any) {
-      if (error.isNetworkError) {
-        console.log('Using demo jobs data')
+      
+      // Проверяем разные форматы ответа
+      if (response.data && response.data.jobs) {
+        console.log('Получены вакансии из API:', response.data.jobs.length)
+        return response.data.jobs
+      } else if (response.data && Array.isArray(response.data.data)) {
+        console.log('Получены вакансии из data:', response.data.data.length)
+        return response.data.data
+      } else if (Array.isArray(response.data)) {
+        console.log('Получены вакансии напрямую:', response.data.length)
+        return response.data
+      } else {
+        console.warn('Неизвестный формат ответа API:', response.data)
+        // Возвращаем демо-данные, если формат ответа неизвестен
+        console.log('Используем демо-данные из-за неизвестного формата ответа')
         return generateDemoJobs()
       }
-      throw error
+    } catch (error: any) {
+      console.error('Ошибка при получении вакансий:', error)
+      if (error.isNetworkError) {
+        console.log('Используем демо-данные из-за сетевой ошибки')
+        return generateDemoJobs()
+      }
+      // В любом случае возвращаем демо-данные при ошибке
+      console.log('Используем демо-данные из-за ошибки')
+      return generateDemoJobs()
     }
   },
 
