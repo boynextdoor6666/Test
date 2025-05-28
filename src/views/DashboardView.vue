@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, reactive } from 'vue'
+import { ref, computed, onMounted, reactive, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 // Use the global i18n instance
@@ -57,6 +57,83 @@ interface EditProfileErrors {
 // Reference variables with proper types
 const jobs = ref<Job[]>([])
 const myJobs = ref<Job[]>([])
+
+// Переменная для хранения интервала обновления
+const refreshInterval = ref<number | null>(null)
+
+// Функция для загрузки вакансий из demoJobs
+const loadDemoJobs = () => {
+  try {
+    // Проверяем наличие вакансий в demoJobs
+    const demoJobsStr = localStorage.getItem('demoJobs')
+    if (demoJobsStr) {
+      console.log('Загружаем вакансии из demoJobs в localStorage')
+      const demoJobs = JSON.parse(demoJobsStr)
+      // Обновляем список вакансий, сохраняя текущие статусы
+      const updatedJobs = demoJobs.map((demoJob: any) => {
+        // Ищем вакансию в текущем списке, чтобы сохранить статус
+        const existingJob = jobs.value.find(j => j.id === demoJob.id)
+        return {
+          ...demoJob,
+          status: existingJob?.status || demoJob.status || 'new'
+        }
+      })
+      jobs.value = updatedJobs
+    }
+    
+    // Загрузка также списка моих заявок (для работника)
+    if (userType.value === 'worker') {
+      // Проверяем наличие заявок в demoApplications
+      const demoApplicationsStr = localStorage.getItem('demoApplications')
+      if (demoApplicationsStr) {
+        const demoApplications = JSON.parse(demoApplicationsStr)
+        
+        // Фильтруем заявки текущего пользователя
+        const userData = localStorage.getItem('user')
+        if (userData) {
+          const user = JSON.parse(userData)
+          const myApplications = demoApplications.filter((app: any) => app.user_id === user.id)
+          
+          // Для каждой заявки находим соответствующую вакансию
+          if (myApplications.length > 0) {
+            // Обновляем список моих вакансий, сохраняя существующие
+            const currentMyJobIds = myJobs.value.map(job => job.id)
+            
+            // Находим все вакансии, на которые я откликнулся
+            const jobsIAppliedTo = jobs.value.filter(job => 
+              myApplications.some((app: any) => app.job_id === job.id)
+            )
+            
+            // Добавляем новые вакансии в список моих вакансий
+            jobsIAppliedTo.forEach(job => {
+              if (!currentMyJobIds.includes(job.id)) {
+                const jobCopy = {
+                  ...job,
+                  appliedAt: new Date().toISOString(),
+                  status: 'new',
+                  applicantData: {
+                    id: Date.now(),
+                    fullName: user.fullName || user.name,
+                    phone: user.phone,
+                    email: user.email,
+                    skills: user.skills,
+                    experience: user.experience,
+                  },
+                }
+                myJobs.value.push(jobCopy)
+              }
+            })
+            
+            // Сохраняем обновленный список
+            localStorage.setItem('myJobs', JSON.stringify(myJobs.value))
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Ошибка при загрузке demoJobs или demoApplications:', e)
+  }
+}
 
 // Загрузка сохраненного языка при монтировании компонента
 onMounted(() => {
@@ -127,6 +204,21 @@ onMounted(() => {
   // Загружаем фото из пользовательских данных, если оно есть
   if (user.value.photo) {
     profilePhoto.preview = user.value.photo
+  }
+
+  // Загружаем вакансии из demoJobs
+  loadDemoJobs()
+  
+  // Устанавливаем интервал для периодического обновления списка вакансий
+  refreshInterval.value = window.setInterval(() => {
+    loadDemoJobs()
+  }, 5000) // Обновляем каждые 5 секунд
+})
+
+// Очищаем интервал при размонтировании компонента
+onUnmounted(() => {
+  if (refreshInterval.value !== null) {
+    clearInterval(refreshInterval.value)
   }
 })
 
@@ -232,12 +324,29 @@ const filteredJobs = computed(() => {
 const availableJobs = computed(() => {
   if (userType.value !== 'worker') return []
 
+  // Загружаем вакансии из demoJobs в localStorage
+  let availableJobList = []
+  try {
+    // Сначала проверяем наличие вакансий в demoJobs
+    const demoJobsStr = localStorage.getItem('demoJobs')
+    if (demoJobsStr) {
+      const demoJobs = JSON.parse(demoJobsStr)
+      availableJobList = demoJobs
+    } else {
+      // Используем обычный список, если demoJobs отсутствуют
+      availableJobList = jobs.value
+    }
+  } catch (e) {
+    console.error('Ошибка при загрузке demoJobs:', e)
+    availableJobList = jobs.value
+  }
+
   // Показываем вакансии, которые еще не приняты этим работником
   const myJobIds = myJobs.value.map((job) => job.id)
 
-  return jobs.value.filter((job) => {
-    // Базовая фильтрация - статус и не в моих откликах
-    const basicFilter = job.status === 'new' && !myJobIds.includes(job.id)
+  return availableJobList.filter((job) => {
+    // Базовая фильтрация - не в моих откликах
+    const basicFilter = !myJobIds.includes(job.id)
 
     // Категория
     const categoryFilter =
@@ -530,56 +639,48 @@ const saveProfileChanges = () => {
 }
 
 // --- Функции для принятия вакансий (для работника) ---
-const applyForJob = (job: Job) => {
-  // Проверяем, не откликался ли уже пользователь на эту вакансию
-  const alreadyApplied = myJobs.value.some((myJob) => myJob.id === job.id)
-  if (alreadyApplied) {
-    alert(`Вы уже откликнулись на вакансию "${job.title}"`)
-    return
-  }
-
-  // Клонируем объект вакансии, чтобы не менять оригинал
-  const jobCopy = {
-    ...job,
-    appliedAt: new Date().toISOString(),
-    status: 'new',
-    applicantData: {
-      id: Date.now(),
-      fullName: user.value.fullName,
-      phone: user.value.phone,
-      email: user.value.email,
-      skills: user.value.skills,
-      experience: user.value.experience,
-    },
-  }
-
-  // Добавляем в список принятых вакансий
-  myJobs.value.push(jobCopy)
-
-  // Сохраняем в localStorage
-  localStorage.setItem('myJobs', JSON.stringify(myJobs.value))
-
-  // Обновляем статус вакансии в общем списке
-  const jobIndex = jobs.value.findIndex((j) => j.id === job.id)
-  if (jobIndex !== -1) {
-    const currentJob = jobs.value[jobIndex]
-    if (currentJob) {
-      // Добавляем информацию о том, что есть заявка
-      if (!currentJob.applications) {
-        currentJob.applications = []
-      }
-      currentJob.applications.push({
-        applicantId: Date.now(),
-        applicantName: user.value.fullName,
+const applyForJob = async (job: Job) => {
+  try {
+    // Импортируем API для работы с вакансиями
+    const { jobsAPI } = await import('@/utils/api')
+    
+    // Используем API для отклика на вакансию
+    const result = await jobsAPI.apply(job.id)
+    
+    // Если отклик отправлен успешно, обновляем UI
+    if (result && result.success) {
+      // Добавляем вакансию в список моих вакансий
+      const jobCopy = {
+        ...job,
         appliedAt: new Date().toISOString(),
         status: 'new',
-      })
-      localStorage.setItem('jobs', JSON.stringify(jobs.value))
+        applicantData: {
+          id: Date.now(),
+          fullName: user.value.fullName,
+          phone: user.value.phone,
+          email: user.value.email,
+          skills: user.value.skills,
+          experience: user.value.experience,
+        },
+      }
+      
+      // Добавляем в список принятых вакансий если её там ещё нет
+      const existingJobIndex = myJobs.value.findIndex(j => j.id === job.id)
+      if (existingJobIndex === -1) {
+        myJobs.value.push(jobCopy)
+        
+        // Сохраняем в localStorage
+        localStorage.setItem('myJobs', JSON.stringify(myJobs.value))
+      }
+      
+      // Показываем уведомление
+      alert(result.message || `Вы успешно откликнулись на вакансию "${job.title}"`)
     }
+  } catch (error: any) {
+    // Показываем сообщение об ошибке
+    alert(error.message || 'Ошибка при отклике на вакансию')
+    console.error('Ошибка при отклике на вакансию:', error)
   }
-
-  // Показываем уведомление
-  alert(`Вы успешно откликнулись на вакансию "${job.title}"`)
 }
 
 // Добавим функции для управления статусом заявок для работодателя
@@ -1058,7 +1159,9 @@ const handleAddJob = () => {
               </div>
 
               <div class="job-actions">
-                <button class="btn btn-primary">{{ t('jobDetails') }}</button>
+                <router-link :to="`/jobs/${job.id}`" class="btn btn-primary">
+                  <i class="fas fa-info-circle"></i> {{ t('jobDetails') }}
+                </router-link>
                 <button
                   class="btn btn-outline"
                   v-if="job.status === 'new' && userType === 'employer'"
@@ -1076,11 +1179,16 @@ const handleAddJob = () => {
                 <button
                   class="btn btn-outline"
                   v-if="job.status === 'new' && userType === 'worker'"
+                  @click="applyForJob(job)"
                 >
-                  {{ t('apply') }}
+                  <i class="fas fa-check"></i> {{ t('apply') }}
                 </button>
-                <button class="btn btn-success" v-if="job.status === 'in-progress'">
-                  {{ t('complete') }}
+                <button 
+                  class="btn btn-success" 
+                  v-if="job.status === 'in-progress'"
+                  @click="changeJobStatus(job.id, 'completed')"
+                >
+                  <i class="fas fa-check-double"></i> {{ t('complete') }}
                 </button>
                 <button
                   class="btn btn-danger"

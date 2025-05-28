@@ -123,7 +123,7 @@ function formatDate(dateString: string): string {
         </template>
 
         <button
-          v-if="!isEmployer && !job.status"
+          v-if="!isEmployer"
           @click="handleApply"
           class="btn btn-sm btn-success"
         >
