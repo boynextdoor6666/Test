@@ -24,6 +24,10 @@ export default defineConfig({
       'Cross-Origin-Embedder-Policy': 'unsafe-none'
     }
   },
+  // Define environment variables
+  define: {
+    'import.meta.env.VITE_GOOGLE_CLIENT_ID': JSON.stringify('655912811217-9dvofthoehrkkgp547dltgb9qb8tnckr.apps.googleusercontent.com')
+  },
   build: {
     // Улучшенные настройки для хостинга
     outDir: 'dist',

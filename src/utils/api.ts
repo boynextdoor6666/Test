@@ -337,31 +337,74 @@ export const authAPI = {
 
   // Google авторизация
   async googleAuth(credential: string, userType = 'worker'): Promise<ApiResponse<{ user: User; token: string }>> {
-    // В демо-режиме создаем фиктивного пользователя Google
+    // В демо-режиме создаем пользователя на основе JWT данных
     if (isOfflineMode()) {
-      const googleUser: User = {
-        id: 'google_demo_' + Date.now(),
-        name: 'Google User',
-        email: 'google_user@example.com',
-        phone: '',
-        userType: userType as 'worker' | 'employer',
-        photo: 'https://via.placeholder.com/150',
-        age: 0,
-        skills: [],
-        experience: '',
-        hasOtherJobs: false,
-        authProvider: 'google',
-        token: 'google_demo_token_' + Date.now()
-      };
-      
-      return {
-        data: {
-          user: googleUser,
-          token: googleUser.token!
-        },
-        success: true,
-        message: 'Демо Google авторизация успешна'
-      };
+      try {
+        // Декодируем JWT токен для получения данных пользователя
+        const tokenData = this.parseJwt(credential);
+        console.log('Декодированные данные JWT:', tokenData);
+        
+        if (!tokenData) {
+          throw new Error('Не удалось декодировать данные пользователя из токена');
+        }
+        
+        // Создаем пользователя на основе реальных данных из JWT
+        const googleUser: User = {
+          id: 'google_' + Date.now(),
+          name: tokenData.name || 'Google User',
+          email: tokenData.email || 'google_user@example.com',
+          phone: '',
+          userType: userType as 'worker' | 'employer',
+          photo: tokenData.picture || 'https://via.placeholder.com/150',
+          age: 0,
+          skills: [],
+          experience: '',
+          hasOtherJobs: false,
+          authProvider: 'google',
+          token: 'google_token_' + Date.now()
+        };
+        
+        // Сохраняем пользователя в демо-базу
+        const demoUsers = JSON.parse(localStorage.getItem('demoUsers') || '[]');
+        
+        // Проверяем, существует ли пользователь с таким email
+        const existingUser = demoUsers.find((u: any) => u.email === googleUser.email);
+        
+        if (existingUser) {
+          // Обновляем существующего пользователя и используем его
+          Object.assign(existingUser, { 
+            ...googleUser,
+            id: existingUser.id, // Сохраняем ID
+            token: 'google_token_' + Date.now() // Обновляем токен
+          });
+          localStorage.setItem('demoUsers', JSON.stringify(demoUsers));
+          
+          return {
+            data: {
+              user: existingUser,
+              token: existingUser.token!
+            },
+            success: true,
+            message: 'Вход через Google выполнен успешно (демо-режим)'
+          };
+        } else {
+          // Добавляем нового пользователя
+          demoUsers.push(googleUser);
+          localStorage.setItem('demoUsers', JSON.stringify(demoUsers));
+          
+          return {
+            data: {
+              user: googleUser,
+              token: googleUser.token!
+            },
+            success: true,
+            message: 'Регистрация через Google выполнена успешно (демо-режим)'
+          };
+        }
+      } catch (error) {
+        console.error('Ошибка при обработке Google Auth в демо-режиме:', error);
+        throw error;
+      }
     }
     
     try {
@@ -372,9 +415,23 @@ export const authAPI = {
       return response.data
     } catch (error: any) {
       if (error.isNetworkError) {
-        throw error // Позволяем GoogleSignIn обработать это как сетевую ошибку
+        // Если сетевая ошибка, переключаемся в демо-режим и повторяем запрос
+        setOfflineMode(true);
+        return this.googleAuth(credential, userType);
       }
       throw error
+    }
+  },
+
+  // Вспомогательный метод для декодирования JWT
+  parseJwt(token: string) {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      return JSON.parse(atob(base64));
+    } catch (e) {
+      console.error("Error parsing JWT:", e);
+      return null;
     }
   },
 

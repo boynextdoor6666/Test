@@ -99,24 +99,29 @@ onMounted(async () => {
 // Онлайн обработка через backend с улучшенной обработкой ошибок
 async function handleOnlineGoogleAuth(response: any) {
   try {
-    // const result = await authAPI.googleAuth(
-    //   response.credential, 
-    //   props.isRegister ? 'worker' : undefined
-    // )
+    // Импортируем authAPI динамически, чтобы избежать циклических зависимостей
+    const { authAPI } = await import('@/utils/api')
+    
+    // Вызываем API для аутентификации через Google
+    const result = await authAPI.googleAuth(
+      response.credential, 
+      props.isRegister ? 'worker' : undefined
+    )
 
-    // if (!result || !result.user) {
-    //   throw new Error('Неверный ответ от сервера')
-    // }
+    if (!result || !result.data || !result.data.user) {
+      throw new Error('Неверный ответ от сервера')
+    }
 
     // Сохраняем пользователя с токеном
     const userData = {
-      // ...result.user,
-      token: 'fallback_token_' + Date.now(),
+      ...result.data.user,
+      token: result.data.token,
       authProvider: 'google'
     };
     
     // Сохраняем пользователя
     localStorage.setItem('user', JSON.stringify(userData));
+    console.log('Google auth successful, user saved:', userData);
     
     // Перенаправляем пользователя
     router.push('/');
@@ -127,9 +132,9 @@ async function handleOnlineGoogleAuth(response: any) {
     error.value = errorMessage
     
     // Если ошибка связана с сетью, переключаемся на демо режим
-    if (err.code === 'NETWORK_ERROR' || err.message.includes('fetch')) {
+    if (err.isNetworkError || err.code === 'NETWORK_ERROR' || err.message.includes('fetch')) {
       isOnlineMode.value = false
-      // handleDemoGoogleAuth(response)
+      handleDemoGoogleAuth(response)
     }
   }
 }
@@ -150,8 +155,27 @@ function parseJwt(token: string) {
 function initializeGoogleSignIn() {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   
-  if (!clientId) {
+  if (!clientId || clientId === 'YOUR_GOOGLE_CLIENT_ID_HERE') {
+    console.error('Google Client ID is missing or not configured properly');
     error.value = t('googleAuth.missingClientId');
+    
+    // Add a fallback message to help with configuration
+    const fallbackMessage = document.createElement('div');
+    fallbackMessage.className = 'google-fallback';
+    fallbackMessage.innerHTML = `
+      <div class="google-config-warning">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p>Google Authentication is not configured</p>
+        <small>Check GOOGLE_AUTH_SETUP.md for instructions</small>
+      </div>
+    `;
+    
+    const buttonElement = document.getElementById('google-signin-button');
+    if (buttonElement) {
+      buttonElement.innerHTML = '';
+      buttonElement.appendChild(fallbackMessage);
+    }
+    
     return false;
   }
   
@@ -285,39 +309,23 @@ async function checkBackendHealth() {
 }
 
 // Демо-режим авторизации для случаев, когда сервер недоступен
-function handleDemoGoogleAuth(response: any) {
+async function handleDemoGoogleAuth(response: any) {
   try {
     console.log('Обработка авторизации в демо-режиме');
     
-    // Извлекаем данные из JWT токена
-    const tokenData = parseJwt(response.credential);
-    console.log('Данные из токена:', tokenData);
+    // Импортируем authAPI динамически
+    const { authAPI } = await import('@/utils/api')
     
-    if (!tokenData) {
-      error.value = t('googleAuth.cannotReadAuthData');
-      return;
+    // Используем API для обработки demo авторизации
+    const result = await authAPI.googleAuth(response.credential, props.isRegister ? 'worker' : 'employer');
+    
+    if (!result || !result.data || !result.data.user) {
+      throw new Error('Ошибка при создании пользователя в демо-режиме');
     }
     
-    // Создаем демо-пользователя
-    const demoUser = {
-      id: 'demo_' + Date.now(),
-      name: tokenData.name || t('googleAuth.demoUser'),
-      email: tokenData.email || 'demo@example.com',
-      phone: '',
-      userType: props.isRegister ? 'worker' : 'employer',
-      photo: tokenData.picture || '',
-      age: 0,
-      skills: [],
-      experience: '',
-      hasOtherJobs: false,
-      authProvider: 'google',
-      token: 'demo_token_' + Date.now(),
-      isDemoMode: true
-    };
-    
-    // Сохраняем в локальное хранилище
-    localStorage.setItem('user', JSON.stringify(demoUser));
-    console.log('Демо-пользователь сохранен:', demoUser);
+    // Сохраняем пользователя
+    localStorage.setItem('user', JSON.stringify(result.data.user));
+    console.log('Демо-пользователь сохранен:', result.data.user);
     
     // Перенаправляем на главную страницу
     router.push('/');
