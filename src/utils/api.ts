@@ -15,6 +15,7 @@ export interface User {
   hasOtherJobs: boolean
   authProvider: string
   token?: string
+  password?: string // Only used in demo mode, not in production
 }
 
 export interface Job {
@@ -254,12 +255,12 @@ export const authAPI = {
       throw new Error('Пользователь с таким email уже существует');
     }
     
-    // Создаем нового пользователя
-    const newUser: User = {
+    // Создаем нового пользователя с паролем для демо-режима
+    const demoUser = {
       id: 'demo_' + Date.now(),
       name: userData.name,
       email: userData.email,
-      password: userData.password, // В демо-режиме храним пароль в открытом виде
+      password: userData.password, // Сохраняем пароль только для демо-пользователей
       phone: userData.phone || '',
       userType: userData.userType as 'worker' | 'employer',
       photo: userData.photo || '',
@@ -272,18 +273,22 @@ export const authAPI = {
     };
     
     // Добавляем пользователя в демо-базу
-    demoUsers.push(newUser);
+    demoUsers.push(demoUser);
     localStorage.setItem('demoUsers', JSON.stringify(demoUsers));
     
-    console.log('Demo user registered:', newUser);
+    console.log('Demo user registered:', demoUser);
     
+    // Убираем пароль из возвращаемого объекта
+    const { password, ...newUser } = demoUser;
+    
+    // Возвращаем пользователя и токен
     return {
       data: {
-        user: newUser,
-        token: newUser.token!
+        user: newUser as User,
+        token: demoUser.token
       },
       success: true,
-      message: 'Демо-регистрация успешна'
+      message: 'Регистрация выполнена в демо-режиме'
     };
   },
 
@@ -501,18 +506,40 @@ export const jobsAPI = {
         console.warn('Неизвестный формат ответа API:', response.data)
         // Возвращаем демо-данные, если формат ответа неизвестен
         console.log('Используем демо-данные из-за неизвестного формата ответа')
-        return generateDemoJobs()
+        return this.getDemoJobs()
       }
     } catch (error: any) {
       console.error('Ошибка при получении вакансий:', error)
       if (error.isNetworkError) {
         console.log('Используем демо-данные из-за сетевой ошибки')
-        return generateDemoJobs()
+        return this.getDemoJobs()
       }
       // В любом случае возвращаем демо-данные при ошибке
       console.log('Используем демо-данные из-за ошибки')
-      return generateDemoJobs()
+      return this.getDemoJobs()
     }
+  },
+
+  // Helper method to get demo jobs from localStorage or generate defaults
+  getDemoJobs(): Job[] {
+    // First try to get saved jobs from localStorage
+    const savedJobs = localStorage.getItem('demoJobs')
+    if (savedJobs) {
+      try {
+        const parsedJobs = JSON.parse(savedJobs)
+        if (Array.isArray(parsedJobs) && parsedJobs.length > 0) {
+          console.log(`Loaded ${parsedJobs.length} jobs from localStorage`)
+          return parsedJobs
+        }
+      } catch (e) {
+        console.error('Error parsing saved jobs:', e)
+      }
+    }
+    
+    // If no saved jobs or error, return generated demo jobs
+    const demoJobs = generateDemoJobs()
+    localStorage.setItem('demoJobs', JSON.stringify(demoJobs))
+    return demoJobs
   },
 
   async getJob(id: number | string): Promise<Job> {
@@ -538,6 +565,21 @@ export const jobsAPI = {
       return response.data
     } catch (error: any) {
       if (error.isNetworkError) {
+        // Get current user
+        const userData = localStorage.getItem('user')
+        let employerName = 'Демо работодатель'
+        let userId = 1
+
+        if (userData) {
+          try {
+            const user = JSON.parse(userData)
+            employerName = user.name || 'Демо работодатель'
+            userId = user.id || 1
+          } catch (e) {
+            console.error('Error parsing user data:', e)
+          }
+        }
+
         const newJob: Job = {
           id: Date.now(),
           title: jobData.title || '',
@@ -548,13 +590,19 @@ export const jobsAPI = {
           category: jobData.category || '',
           date: jobData.date || new Date().toISOString(),
           requirements: [],
-          employer: 'Демо работодатель',
+          employer: employerName,
           urgency: 'medium' as const,
           employment_type: 'part-time' as const,
-          user_id: 1,
+          user_id: userId,
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
+          applications_count: 0
         }
+        
+        // Save to localStorage for demo mode
+        const savedJobs = JSON.parse(localStorage.getItem('demoJobs') || '[]')
+        savedJobs.unshift(newJob) // Add at beginning of array
+        localStorage.setItem('demoJobs', JSON.stringify(savedJobs))
         
         return {
           data: newJob,
@@ -572,6 +620,23 @@ export const jobsAPI = {
       return response.data
     } catch (error: any) {
       if (error.isNetworkError) {
+        // Update job in localStorage
+        const savedJobs = JSON.parse(localStorage.getItem('demoJobs') || '[]')
+        const jobIndex = savedJobs.findIndex((job: Job) => job.id.toString() === id.toString())
+        
+        if (jobIndex !== -1) {
+          // Update existing job with new data
+          const updatedJob = { ...savedJobs[jobIndex], ...jobData, updated_at: new Date().toISOString() }
+          savedJobs[jobIndex] = updatedJob
+          localStorage.setItem('demoJobs', JSON.stringify(savedJobs))
+          
+          return {
+            data: updatedJob as Job,
+            success: true,
+            message: 'Вакансия обновлена в демо-режиме'
+          }
+        }
+        
         return {
           data: { ...jobData, id: Number(id) } as Job,
           success: true,
@@ -588,6 +653,11 @@ export const jobsAPI = {
       return response.data
     } catch (error: any) {
       if (error.isNetworkError) {
+        // Delete job from localStorage
+        const savedJobs = JSON.parse(localStorage.getItem('demoJobs') || '[]')
+        const filteredJobs = savedJobs.filter((job: Job) => job.id.toString() !== id.toString())
+        localStorage.setItem('demoJobs', JSON.stringify(filteredJobs))
+        
         return {
           data: undefined,
           success: true,
@@ -627,8 +697,20 @@ export const jobsAPI = {
             updated_at: new Date().toISOString()
           }
           
-          applications.push({ ...newApplication, user_id: user.id })
+          // Add application to localStorage
+          const applicationWithUser = { ...newApplication, user_id: user.id }
+          applications.push(applicationWithUser)
           localStorage.setItem('demoApplications', JSON.stringify(applications))
+          
+          // Update job's application count in localStorage
+          const savedJobs = JSON.parse(localStorage.getItem('demoJobs') || '[]')
+          const jobIndex = savedJobs.findIndex((job: Job) => job.id.toString() === jobId.toString())
+          
+          if (jobIndex !== -1) {
+            const currentCount = savedJobs[jobIndex].applications_count || 0
+            savedJobs[jobIndex].applications_count = currentCount + 1
+            localStorage.setItem('demoJobs', JSON.stringify(savedJobs))
+          }
           
           return {
             data: newApplication,
