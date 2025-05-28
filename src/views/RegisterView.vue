@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import GoogleSignIn from '@/components/GoogleSignIn.vue'
 import { authAPI } from '@/utils/api'
 
 const router = useRouter()
+const { t } = useI18n()
 
 // Данные формы
 const formData = ref({
@@ -35,7 +37,7 @@ const handlePhotoChange = (event: Event) => {
 
   // Проверка на тип файла (только изображения)
   if (!file.type.match('image.*')) {
-    profilePhoto.error = 'Пожалуйста, выберите изображение'
+    profilePhoto.error = t('errors.photoRequired')
     profilePhoto.file = null
     profilePhoto.preview = ''
     return
@@ -43,7 +45,7 @@ const handlePhotoChange = (event: Event) => {
 
   // Проверка на размер файла (не более 5МБ)
   if (file.size > 5 * 1024 * 1024) {
-    profilePhoto.error = 'Размер файла не должен превышать 5МБ'
+    profilePhoto.error = t('errors.photoSizeLimit')
     profilePhoto.file = null
     profilePhoto.preview = ''
     return
@@ -132,41 +134,41 @@ const handleSubmit = async () => {
   let isValid = true
 
   if (!formData.value.name) {
-    errors.value.name = 'Пожалуйста, введите ваше имя'
+    errors.value.name = t('errors.enterName')
     isValid = false
   }
 
   if (!formData.value.email) {
-    errors.value.email = 'Пожалуйста, введите email'
+    errors.value.email = t('registerPage.errors.enterEmail')
     isValid = false
   } else if (!/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(formData.value.email)) {
-    errors.value.email = 'Пожалуйста, введите корректный email'
+    errors.value.email = t('registerPage.errors.enterValidEmail')
     isValid = false
   }
 
   if (!formData.value.phone) {
-    errors.value.phone = 'Пожалуйста, введите номер телефона'
+    errors.value.phone = t('errors.enterPhone')
     isValid = false
   } else if (!/^\+?\d{10,13}$/.test(formData.value.phone.replace(/\s/g, ''))) {
-    errors.value.phone = 'Пожалуйста, введите корректный номер телефона'
+    errors.value.phone = t('registerPage.errors.enterValidPhone')
     isValid = false
   }
 
   if (!formData.value.password) {
-    errors.value.password = 'Пожалуйста, введите пароль'
+    errors.value.password = t('registerPage.errors.enterPassword')
     isValid = false
   } else if (formData.value.password.length < 6) {
-    errors.value.password = 'Пароль должен содержать минимум 6 символов'
+    errors.value.password = t('registerPage.errors.passwordMinLength')
     isValid = false
   }
 
   if (formData.value.password !== formData.value.confirmPassword) {
-    errors.value.confirmPassword = 'Пароли не совпадают'
+    errors.value.confirmPassword = t('registerPage.errors.passwordsDoNotMatch')
     isValid = false
   }
 
   if (!formData.value.termsAccepted) {
-    errors.value.termsAccepted = 'Пожалуйста, примите пользовательское соглашение'
+    errors.value.termsAccepted = t('registerPage.errors.acceptTerms')
     isValid = false
   }
 
@@ -199,12 +201,12 @@ const handleSubmit = async () => {
         if (err.response?.data?.error) {
           errors.value.email = err.response.data.error
         } else {
-          errors.value.email = 'Ошибка регистрации'
+          errors.value.email = t('registerPage.errors.registrationError')
         }
       }
     } else {
       isLoading.value = false
-      errors.value.email = 'Регистрация недоступна в демо-режиме. Используйте тестовые аккаунты.'
+      errors.value.email = t('registerPage.errors.demoModeRegistrationUnavailable')
     }
   }
 }
@@ -220,8 +222,8 @@ const setUserType = (type: string) => {
     <div class="container">
       <div class="register-container">
         <div class="register-header">
-          <h1>Регистрация</h1>
-          <p>Создайте учетную запись для доступа к вакансиям</p>
+          <h1>{{ t('registerPage.title') }}</h1>
+          <p>{{ t('registerPage.subtitle') }}</p>
         </div>
 
         <div class="user-type-selector">
@@ -230,21 +232,21 @@ const setUserType = (type: string) => {
             :class="{ active: formData.userType === 'worker' }"
             @click="setUserType('worker')"
           >
-            Я ищу работу
+            {{ t('registerPage.iAmLookingForJob') }}
           </button>
           <button
             class="user-type-btn"
             :class="{ active: formData.userType === 'employer' }"
             @click="setUserType('employer')"
           >
-            Я ищу работников
+            {{ t('registerPage.iAmLookingForWorkers') }}
           </button>
         </div>
 
         <form @submit.prevent="handleSubmit" class="register-form">
           <!-- Загрузка фото профиля -->
           <div class="form-group profile-photo-upload">
-            <label>Фото профиля</label>
+            <label>{{ t('registerPage.profilePhoto') }}</label>
             <div class="photo-upload-container">
               <div class="photo-preview" :class="{ 'has-photo': profilePhoto.preview }">
                 <img
@@ -269,7 +271,7 @@ const setUserType = (type: string) => {
               <div class="photo-upload-controls">
                 <label for="photo-upload" class="upload-btn">
                   <i class="fas fa-camera"></i>
-                  {{ profilePhoto.preview ? 'Изменить фото' : 'Загрузить фото' }}
+                  {{ profilePhoto.preview ? t('registerPage.changePhoto') : t('registerPage.uploadPhoto') }}
                 </label>
                 <input
                   type="file"
@@ -278,7 +280,7 @@ const setUserType = (type: string) => {
                   @change="handlePhotoChange"
                   class="photo-input"
                 />
-                <p class="photo-hint">JPG, PNG, GIF. Макс. размер 5МБ</p>
+                <p class="photo-hint">{{ t('registerPage.photoRequirements') }}</p>
                 <div v-if="profilePhoto.error" class="photo-error">
                   {{ profilePhoto.error }}
                 </div>
@@ -287,33 +289,33 @@ const setUserType = (type: string) => {
           </div>
 
           <div class="form-group">
-            <label for="name">Имя</label>
+            <label for="name">{{ t('name') }}</label>
             <input
               type="text"
               id="name"
               v-model="formData.name"
               class="form-control"
               :class="{ 'has-error': errors.name }"
-              placeholder="Введите ваше имя"
+              :placeholder="t('registerPage.enterYourName')"
             />
             <div class="error-message" v-if="errors.name">{{ errors.name }}</div>
           </div>
 
           <div class="form-group">
-            <label for="email">Email</label>
+            <label for="email">{{ t('email') }}</label>
             <input
               type="email"
               id="email"
               v-model="formData.email"
               class="form-control"
               :class="{ 'has-error': errors.email }"
-              placeholder="Введите ваш email"
+              :placeholder="t('registerPage.enterYourEmail')"
             />
             <div class="error-message" v-if="errors.email">{{ errors.email }}</div>
           </div>
 
           <div class="form-group">
-            <label for="phone">Телефон</label>
+            <label for="phone">{{ t('phone') }}</label>
             <input
               type="tel"
               id="phone"
@@ -326,27 +328,27 @@ const setUserType = (type: string) => {
           </div>
 
           <div class="form-group">
-            <label for="password">Пароль</label>
+            <label for="password">{{ t('registerPage.password') }}</label>
             <input
               type="password"
               id="password"
               v-model="formData.password"
               class="form-control"
               :class="{ 'has-error': errors.password }"
-              placeholder="Минимум 6 символов"
+              :placeholder="t('registerPage.minSixChars')"
             />
             <div class="error-message" v-if="errors.password">{{ errors.password }}</div>
           </div>
 
           <div class="form-group">
-            <label for="confirmPassword">Подтверждение пароля</label>
+            <label for="confirmPassword">{{ t('registerPage.confirmPassword') }}</label>
             <input
               type="password"
               id="confirmPassword"
               v-model="formData.confirmPassword"
               class="form-control"
               :class="{ 'has-error': errors.confirmPassword }"
-              placeholder="Повторите пароль"
+              :placeholder="t('registerPage.repeatPassword')"
             />
             <div class="error-message" v-if="errors.confirmPassword">
               {{ errors.confirmPassword }}
@@ -358,8 +360,8 @@ const setUserType = (type: string) => {
             <label class="checkbox-label">
               <input type="checkbox" v-model="formData.termsAccepted" />
               <span class="checkbox-text">
-                Я согласен с <a href="#" class="terms-link">условиями использования</a> и
-                <a href="#" class="terms-link">политикой конфиденциальности</a>
+                {{ t('registerPage.iAgree') }} <a href="#" class="terms-link">{{ t('termsOfUse') }}</a> {{ t('registerPage.and') }}
+                <a href="#" class="terms-link">{{ t('privacyPolicy') }}</a>
               </span>
             </label>
             <div class="error-message" v-if="errors.termsAccepted">
@@ -369,20 +371,20 @@ const setUserType = (type: string) => {
 
           <div class="form-actions">
             <button type="submit" class="btn btn-primary" :disabled="isLoading">
-              {{ isLoading ? 'Регистрация...' : 'Зарегистрироваться' }}
+              {{ isLoading ? t('registerPage.registering') : t('registerPage.registerButton') }}
             </button>
           </div>
 
           <!-- Google auth button -->
           <div class="social-login">
             <div class="divider">
-              <span>или</span>
+              <span>{{ t('loginPage.or') }}</span>
             </div>
             <GoogleSignIn :isRegister="true" />
           </div>
 
           <div class="login-link">
-            Уже есть аккаунт? <router-link to="/login">Войти</router-link>
+            {{ t('registerPage.alreadyHaveAccount') }} <router-link to="/login">{{ t('registerPage.loginLink') }}</router-link>
           </div>
         </form>
 
@@ -390,34 +392,33 @@ const setUserType = (type: string) => {
         <div v-if="showRedirectError" class="oauth-error-container">
           <div class="oauth-error-card">
             <div class="oauth-error-header">
-              <h3>Ошибка настройки Google OAuth</h3>
+              <h3>{{ t('registerPage.googleOAuth.errorTitle') }}</h3>
               <button class="close-btn" @click="hideGoogleOAuthInstructions">&times;</button>
             </div>
             <div class="oauth-error-content">
               <p>
-                <strong>Проблема:</strong> Ошибка "redirect_uri_mismatch" возникает, когда URI
-                перенаправления не настроен корректно в Google Cloud Console.
+                <strong>{{ t('registerPage.googleOAuth.problem') }}:</strong> {{ t('registerPage.googleOAuth.problemDescription') }}
               </p>
 
               <div class="error-details">
                 <p>
-                  Текущий URI перенаправления: <code>{{ currentOrigin }}</code>
+                  {{ t('registerPage.googleOAuth.currentRedirectUri') }}: <code>{{ currentOrigin }}</code>
                 </p>
               </div>
 
-              <h4>Шаги для исправления:</h4>
+              <h4>{{ t('registerPage.googleOAuth.stepsToFix') }}:</h4>
               <ol>
                 <li>
-                  Откройте
+                  {{ t('registerPage.googleOAuth.openConsole') }}
                   <a href="https://console.cloud.google.com/apis/credentials" target="_blank"
                     >Google Cloud Console</a
                   >
                 </li>
-                <li>Найдите и выберите ваш проект</li>
-                <li>Перейдите в раздел "Credentials" (Учетные данные)</li>
-                <li>Найдите и отредактируйте ваш OAuth 2.0 Client ID</li>
+                <li>{{ t('registerPage.googleOAuth.findProject') }}</li>
+                <li>{{ t('registerPage.googleOAuth.goToCredentials') }}</li>
+                <li>{{ t('registerPage.googleOAuth.findOAuthClient') }}</li>
                 <li>
-                  В разделе "Authorized redirect URIs" добавьте следующие URI:
+                  {{ t('registerPage.googleOAuth.addRedirectUris') }}:
                   <ul>
                     <li>
                       <code>{{ currentOrigin }}</code>
@@ -436,35 +437,21 @@ const setUserType = (type: string) => {
                     </li>
                   </ul>
                 </li>
-                <li>Нажмите "Save" (Сохранить)</li>
-                <li>Изменения могут вступить в силу через несколько минут</li>
+                <li>{{ t('registerPage.googleOAuth.saveChanges') }}</li>
+                <li>{{ t('registerPage.googleOAuth.changesEffect') }}</li>
               </ol>
 
               <p class="note">
-                Примечание: Если вы используете локальную разработку, также добавьте URIs для других
-                портов (например, http://localhost:3000, http://localhost:5173 и т.д.)
+                {{ t('registerPage.googleOAuth.note') }}
               </p>
 
               <div class="oauth-error-actions">
                 <button class="btn btn-primary" @click="hideGoogleOAuthInstructions">
-                  Понятно
+                  {{ t('registerPage.googleOAuth.gotIt') }}
                 </button>
-                <a
-                  href="https://console.cloud.google.com/apis/credentials"
-                  target="_blank"
-                  class="btn btn-outline"
-                  >Открыть Google Cloud Console</a
-                >
               </div>
             </div>
           </div>
-        </div>
-
-        <!-- Ссылка для показа инструкций по настройке Google OAuth -->
-        <div class="oauth-help">
-          <button class="text-link" @click="showGoogleOAuthInstructions">
-            Проблемы с регистрацией через Google? Нажмите здесь
-          </button>
         </div>
       </div>
     </div>

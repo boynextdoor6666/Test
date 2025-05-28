@@ -89,7 +89,7 @@ export const messages = {
     register: 'Регистрация',
     postJob: 'Выложить работу',
     navigation: 'Навигация',
-    home: 'Главная',
+    homePage: 'Главная',
     contacts: 'Контакты',
     socials: 'Социальные сети',
     copyright: 'Все права защищены',
@@ -168,8 +168,8 @@ export const messages = {
       other: 'Разное',
     },
     // Google Auth
-    loginWithGoogle: 'Войти с помощью Google',
-    registerWithGoogle: 'Зарегистрироваться с помощью Google',
+    loginWithGoogle: 'Google менен кирүү',
+    registerWithGoogle: 'Google менен катталуу',
     // Error messages
     errors: {
       enterName: 'Введите ФИО',
@@ -188,7 +188,6 @@ export const messages = {
     offline: {
       message: 'Нет подключения к интернету. Работаем в оффлайн режиме.'
     },
-    jobCount: 'нет вакансий | {count} вакансия | {count} вакансии | {count} вакансий',
   },
   kg: {
     profile: 'Профиль',
@@ -274,7 +273,7 @@ export const messages = {
     register: 'Каттоо',
     postJob: 'Жумуш жарыялоо',
     navigation: 'Навигация',
-    home: 'Башкы бет',
+    homePage: 'Башкы бет',
     contacts: 'Байланыштар',
     socials: 'Социалдык тармактар',
     copyright: 'Бардык укуктар корголгон',
@@ -373,7 +372,6 @@ export const messages = {
     offline: {
       message: 'Интернетке туташуу жок. Оффлайн режимде иштейбиз.'
     },
-    jobCount: 'вакансия жок | {count} вакансия | {count} вакансия',
   },
 }
 
@@ -393,9 +391,15 @@ export const i18n = createI18n({
 })
 
 // Функция для переключения языка
-export function switchLanguage(langCode: TranslationLanguages) {
-  i18n.global.locale.value = langCode
-  localStorage.setItem('locale', langCode)
+export function switchLanguage() {
+  // Приведение типов нужно из-за особенностей TypeScript
+  const i18nGlobal = i18n.global as any
+  const currentLocale = i18nGlobal.locale.value
+  const newLocale = currentLocale === 'ru' ? 'kg' : 'ru'
+
+  // Устанавливаем новый язык
+  i18nGlobal.locale.value = newLocale
+  localStorage.setItem('preferredLanguage', newLocale)
 }
 
 // Экспортируем тип ключей перевода

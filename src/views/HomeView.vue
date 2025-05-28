@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import JobCard from '@/components/JobCard.vue'
 import { jobsAPI } from '@/utils/api'
 // Импортируем логотип
 import logoImg from '@/assets/img/logo.jpg'
+
+// Используем i18n
+const { t } = useI18n()
 
 // Состояния компонента
 const isLoggedIn = ref(false)
@@ -42,39 +46,39 @@ const loadRecentJobs = async () => {
     recentJobs.value = jobs.slice(0, 3)
   } catch (e: any) {
     console.error('Ошибка при загрузке вакансий:', e)
-    error.value = 'Не удалось загрузить вакансии'
+    error.value = t('homeContent.recentJobs.errorMessage')
     
     // В случае ошибки используем демо-данные
     recentJobs.value = [
       {
         id: 1,
-        title: 'Курьер на день',
-        description: 'Доставка документов по городу на 1 день',
+        title: t('homeContent.recentJobs.demoJobs.job1.title'),
+        description: t('homeContent.recentJobs.demoJobs.job1.description'),
         salary: '1000 сом',
         location: 'Бишкек',
         phone: '+996 555 123456',
         date: new Date().toISOString(),
-        category: 'Доставка',
+        category: t('homeContent.recentJobs.demoJobs.job1.category'),
       },
       {
         id: 2,
-        title: 'Помощник на мероприятие',
-        description: 'Требуется помощник для организации мероприятия',
+        title: t('homeContent.recentJobs.demoJobs.job2.title'),
+        description: t('homeContent.recentJobs.demoJobs.job2.description'),
         salary: '1500 сом',
         location: 'Бишкек',
         phone: '+996 555 789012',
         date: new Date().toISOString(),
-        category: 'Мероприятия',
+        category: t('homeContent.recentJobs.demoJobs.job2.category'),
       },
       {
         id: 3,
-        title: 'Уборка помещения',
-        description: 'Уборка офиса после ремонта',
+        title: t('homeContent.recentJobs.demoJobs.job3.title'),
+        description: t('homeContent.recentJobs.demoJobs.job3.description'),
         salary: '2000 сом',
         location: 'Бишкек',
         phone: '+996 555 345678',
         date: new Date().toISOString(),
-        category: 'Уборка',
+        category: t('homeContent.recentJobs.demoJobs.job3.category'),
       }
     ]
   } finally {
@@ -99,17 +103,16 @@ onMounted(() => {
       <div class="container">
         <div class="hero-content">
           <div class="hero-text">
-            <h1 class="hero-title">Найдите подработку<br /><span>прямо сейчас</span></h1>
+            <h1 class="hero-title">{{ t('homeContent.hero.title') }}<br /><span>{{ t('homeContent.hero.titleSpan') }}</span></h1>
             <p class="hero-subtitle">
-              TEZ JUMUSH - платформа для быстрого поиска временной работы и надежных исполнителей в
-              Кыргызстане
+              {{ t('homeContent.hero.subtitle') }}
             </p>
             <div class="hero-buttons">
               <router-link to="/jobs" class="btn btn-primary btn-lg">
-                <i class="fas fa-search"></i> Найти работу
+                <i class="fas fa-search"></i> {{ t('homeContent.hero.findJobBtn') }}
               </router-link>
               <a href="https://t.me/tezJumush" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-lg">
-                <i class="fab fa-telegram-plane"></i> Выложить работу
+                <i class="fab fa-telegram-plane"></i> {{ t('homeContent.hero.postJobBtn') }}
               </a>
             </div>
 
@@ -117,25 +120,25 @@ onMounted(() => {
             <div v-if="!isLoggedIn" class="auth-notice">
               <i class="fas fa-info-circle"></i>
               <p>
-                Для доступа к вакансиям необходимо
-                <router-link to="/login" class="auth-link">войти</router-link>
-                или
-                <router-link to="/register" class="auth-link">зарегистрироваться</router-link>
+                {{ t('homeContent.hero.authNotice') }}
+                <router-link to="/login" class="auth-link">{{ t('homeContent.hero.login') }}</router-link>
+                {{ t('homeContent.hero.or') }}
+                <router-link to="/register" class="auth-link">{{ t('homeContent.hero.register') }}</router-link>
               </p>
             </div>
 
             <div class="hero-stats">
               <div class="hero-stat">
                 <span class="hero-stat-number">500+</span>
-                <span class="hero-stat-label">Вакансий</span>
+                <span class="hero-stat-label">{{ t('homeContent.hero.stats.jobs') }}</span>
               </div>
               <div class="hero-stat">
                 <span class="hero-stat-number">1000+</span>
-                <span class="hero-stat-label">Работников</span>
+                <span class="hero-stat-label">{{ t('homeContent.hero.stats.workers') }}</span>
               </div>
               <div class="hero-stat">
-                <span class="hero-stat-number">200+</span>
-                <span class="hero-stat-label">Компаний</span>
+                <span class="hero-stat-number">50+</span>
+                <span class="hero-stat-label">{{ t('homeContent.hero.stats.companies') }}</span>
               </div>
             </div>
           </div>
@@ -149,8 +152,8 @@ onMounted(() => {
             />
             <!-- Fallback для случая, когда изображения не загружаются -->
             <div v-if="imageError" class="logo-fallback">
-              <div class="logo-text">TEZ JUMUSH</div>
-              <div class="logo-subtitle">Быстрый поиск работы</div>
+              <div class="logo-text">{{ t('homeContent.logoFallback.title') }}</div>
+              <div class="logo-subtitle">{{ t('homeContent.logoFallback.subtitle') }}</div>
             </div>
           </div>
         </div>
@@ -169,17 +172,15 @@ onMounted(() => {
     <!-- About Section -->
     <section class="section about-section" id="about">
       <div class="container">
-        <h2 class="text-center">О нас</h2>
+        <h2 class="text-center">{{ t('homeContent.about.title') }}</h2>
         <div class="about-content mt-4">
           <div class="about-text">
             <p>
-              Tez Jumush - это платформа, которая соединяет людей, ищущих временную работу, с теми,
-              кто ищет работников для выполнения разовых задач.
+              {{ t('homeContent.about.text1') }}
             </p>
-            <p>Наша миссия - помочь людям найти подработку быстро и без лишних сложностей.</p>
+            <p>{{ t('homeContent.about.text2') }}</p>
             <p>
-              Мы предлагаем широкий спектр вакансий: от уборки и курьерской доставки до строительных
-              работ и помощи по дому.
+              {{ t('homeContent.about.text3') }}
             </p>
           </div>
           <div class="about-image">
@@ -192,7 +193,7 @@ onMounted(() => {
               loading="lazy"
             />
             <div v-if="imageError" class="logo-fallback-small">
-              <div class="logo-text-small">TEZ JUMUSH</div>
+              <div class="logo-text-small">{{ t('homeContent.logoFallback.title') }}</div>
             </div>
           </div>
         </div>
@@ -202,13 +203,13 @@ onMounted(() => {
     <!-- Recent Jobs Section -->
     <section class="section recent-jobs-section">
       <div class="container">
-        <h2 class="text-center">Последние вакансии</h2>
+        <h2 class="text-center">{{ t('homeContent.recentJobs.title') }}</h2>
         
         <div v-if="loading" class="loading-container">
           <div class="loading-spinner">
             <i class="fas fa-spinner fa-spin"></i>
           </div>
-          <p>Загрузка вакансий...</p>
+          <p>{{ t('homeContent.recentJobs.loading') }}</p>
         </div>
         
         <div v-else-if="error" class="error-container">
@@ -217,7 +218,7 @@ onMounted(() => {
           </div>
           <p class="error-message">{{ error }}</p>
           <button @click="loadRecentJobs" class="retry-button">
-            <i class="fas fa-redo"></i> Попробовать снова
+            <i class="fas fa-redo"></i> {{ t('homeContent.recentJobs.retry') }}
           </button>
         </div>
         
@@ -232,7 +233,7 @@ onMounted(() => {
         
         <div class="text-center mt-4">
           <router-link to="/jobs" class="btn btn-primary">
-            <i class="fas fa-briefcase"></i> Смотреть все вакансии
+            <i class="fas fa-briefcase"></i> {{ t('homeContent.recentJobs.viewAll') }}
           </router-link>
         </div>
       </div>
@@ -246,17 +247,17 @@ onMounted(() => {
           <div class="cta-icon">
             <i class="fas fa-bullhorn"></i>
           </div>
-          <h2 class="cta-title">Нужны <span>работники?</span></h2>
+          <h2 class="cta-title">{{ t('homeContent.cta.title') }} <span>{{ t('homeContent.cta.titleSpan') }}</span></h2>
           <p class="cta-text">
-            Разместите вакансию бесплатно и найдите подходящих работников уже сегодня!
+            {{ t('homeContent.cta.text') }}
           </p>
           <div class="cta-actions">
             <a href="https://t.me/tezJumush" target="_blank" rel="noopener noreferrer" class="btn btn-cta">
-              <i class="fab fa-telegram-plane"></i> Разместить вакансию
+              <i class="fab fa-telegram-plane"></i> {{ t('homeContent.cta.button') }}
             </a>
             <div class="cta-guarantee">
               <i class="fas fa-shield-alt"></i>
-              <span>Бесплатно и без регистрации</span>
+              <span>{{ t('homeContent.cta.guarantee') }}</span>
             </div>
           </div>
         </div>

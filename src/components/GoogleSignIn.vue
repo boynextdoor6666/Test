@@ -9,7 +9,7 @@
     <div v-if="error" class="error-message">
       <i class="fas fa-exclamation-circle"></i>
       {{ error }}
-      <button @click="retryInit" class="retry-btn">Попробовать снова</button>
+      <button @click="retryInit" class="retry-btn">{{ t('googleAuth.tryAgain') }}</button>
     </div>
   </div>
 </template>
@@ -17,6 +17,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   isRegister: {
@@ -25,6 +26,7 @@ const props = defineProps({
   }
 })
 
+const { t } = useI18n()
 const isOnlineMode = ref(true)
 const showMode = ref(false)
 
@@ -49,7 +51,7 @@ async function handleCredentialResponse(response: any) {
     // Проверяем наличие токена в ответе
     if (!response || !response.credential) {
       console.error('Некорректный ответ от Google Auth:', response);
-      error.value = 'Ошибка авторизации через Google';
+      error.value = t('googleAuth.authError');
       return;
     }
     
@@ -74,7 +76,7 @@ async function handleCredentialResponse(response: any) {
     }
   } catch (e) {
     console.error('Критическая ошибка в обработчике Google Auth:', e);
-    error.value = 'Ошибка авторизации через Google';
+    error.value = t('googleAuth.authError');
     return false;
   }
 }
@@ -121,7 +123,7 @@ async function handleOnlineGoogleAuth(response: any) {
     
   } catch (err: any) {
     console.error('Google auth error:', err)
-    const errorMessage = err.response?.data?.error || err.message || 'Ошибка авторизации через Google'
+    const errorMessage = err.response?.data?.error || err.message || t('googleAuth.authError')
     error.value = errorMessage
     
     // Если ошибка связана с сетью, переключаемся на демо режим
@@ -149,7 +151,7 @@ function initializeGoogleSignIn() {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   
   if (!clientId) {
-    error.value = "Отсутствует VITE_GOOGLE_CLIENT_ID. Создайте .env файл в корне проекта.";
+    error.value = t('googleAuth.missingClientId');
     return false;
   }
   
@@ -177,7 +179,8 @@ function initializeGoogleSignIn() {
       theme: 'outline',
       size: 'large',
       text: props.isRegister ? 'signup_with' : 'signin_with',
-      width: 300 // Фиксированная ширина вместо процентной
+      width: 300, // Фиксированная ширина вместо процентной
+      logo_alignment: 'center'
     });
     
     // Добавляем вариант с One Tap для решения проблем с Cross-Origin
@@ -196,7 +199,7 @@ function initializeGoogleSignIn() {
     return true;
   } catch (err) {
     console.error("Google initialization error:", err);
-    error.value = "Ошибка инициализации Google Auth";
+    error.value = t('googleAuth.initError');
     return false;
   }
 }
@@ -223,12 +226,12 @@ function loadGoogleScript() {
 // Функция повторной инициализации
 async function retryInit() {
   if (retryCount.value >= maxRetries) {
-    error.value = "Превышено количество попыток. Обновите страницу.";
+    error.value = t('googleAuth.maxRetriesExceeded');
     return;
   }
   
   retryCount.value++;
-  error.value = `Повторная попытка ${retryCount.value}/${maxRetries}...`;
+  error.value = t('googleAuth.retryAttempt', { current: retryCount.value, max: maxRetries });
   
   try {
     await loadGoogleScript();
@@ -239,7 +242,7 @@ async function retryInit() {
     }
   } catch (err) {
     console.error('Retry initialization failed:', err)
-    error.value = `Попытка ${retryCount.value}/${maxRetries} не удалась`
+    error.value = t('googleAuth.retryFailed', { current: retryCount.value, max: maxRetries })
   }
 }
 
@@ -253,7 +256,7 @@ onMounted(async () => {
     }
   } catch (err) {
     console.error('Failed to load Google Sign-In:', err)
-    error.value = 'Не удалось загрузить Google Sign-In'
+    error.value = t('googleAuth.loadError')
   }
 })
 
@@ -291,14 +294,14 @@ function handleDemoGoogleAuth(response: any) {
     console.log('Данные из токена:', tokenData);
     
     if (!tokenData) {
-      error.value = 'Не удалось прочитать данные авторизации';
+      error.value = t('googleAuth.cannotReadAuthData');
       return;
     }
     
     // Создаем демо-пользователя
     const demoUser = {
       id: 'demo_' + Date.now(),
-      name: tokenData.name || 'Демо Пользователь',
+      name: tokenData.name || t('googleAuth.demoUser'),
       email: tokenData.email || 'demo@example.com',
       phone: '',
       userType: props.isRegister ? 'worker' : 'employer',
@@ -320,7 +323,7 @@ function handleDemoGoogleAuth(response: any) {
     router.push('/');
   } catch (err) {
     console.error('Ошибка демо-авторизации:', err);
-    error.value = 'Ошибка при демо-авторизации';
+    error.value = t('googleAuth.demoAuthError');
   }
 }
 </script>

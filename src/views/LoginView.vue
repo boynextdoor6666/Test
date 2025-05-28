@@ -2,11 +2,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import GoogleSignIn from '@/components/GoogleSignIn.vue'
 import { authAPI } from '@/utils/api'
 
 const router = useRouter()
 const route = useRoute()
+const { t } = useI18n()
 
 const loginForm = ref({
   email: '',
@@ -70,7 +72,7 @@ async function handleOnlineLogin() {
     if (err.response?.data?.error) {
       error.value = err.response.data.error
     } else {
-      error.value = 'Ошибка подключения к серверу'
+      error.value = t('loginPage.errors.connectionError')
     }
   }
 }
@@ -89,7 +91,7 @@ function handleDemoLogin() {
     const redirectPath = (route.query.redirect as string) || '/'
     router.push(redirectPath)
   } else {
-    error.value = 'Неверный email или пароль'
+    error.value = t('loginPage.errors.invalidCredentials')
   }
 }
 
@@ -99,7 +101,7 @@ async function handleLogin() {
   error.value = ''
 
   if (!loginForm.value.email || !loginForm.value.password) {
-    error.value = 'Пожалуйста, заполните все поля'
+    error.value = t('loginPage.errors.fillAllFields')
     isLoading.value = false
     return
   }
@@ -114,7 +116,7 @@ async function handleLogin() {
     }
   } catch (err) {
     console.error('Login error:', err)
-    error.value = 'Произошла ошибка при входе'
+    error.value = t('loginPage.errors.loginError')
   } finally {
     isLoading.value = false
   }
@@ -130,37 +132,37 @@ function handleRegister() {
     <div class="container">
       <div class="login-container">
         <div class="login-header">
-          <h1>Вход в систему</h1>
-          <p>Войдите в систему, чтобы получить доступ к вакансиям</p>
+          <h1>{{ t('loginPage.title') }}</h1>
+          <p>{{ t('loginPage.subtitle') }}</p>
           
           <!-- Индикатор режима работы -->
           <div class="mode-indicator" :class="{ online: isOnlineMode, demo: !isOnlineMode }">
             <i :class="isOnlineMode ? 'fas fa-cloud' : 'fas fa-laptop'"></i>
-            {{ isOnlineMode ? 'Онлайн режим' : 'Демо режим' }}
+            {{ isOnlineMode ? t('loginPage.onlineMode') : t('loginPage.demoMode') }}
           </div>
         </div>
 
         <form @submit.prevent="handleLogin" class="login-form">
           <div class="form-group">
-            <label for="email">Email</label>
+            <label for="email">{{ t('loginPage.emailLabel') }}</label>
             <input
               type="email"
               id="email"
               v-model="loginForm.email"
               class="form-control"
-              placeholder="Введите ваш email"
+              :placeholder="t('loginPage.emailPlaceholder')"
               required
             />
           </div>
 
           <div class="form-group">
-            <label for="password">Пароль</label>
+            <label for="password">{{ t('loginPage.passwordLabel') }}</label>
             <input
               type="password"
               id="password"
               v-model="loginForm.password"
               class="form-control"
-              placeholder="Введите ваш пароль"
+              :placeholder="t('loginPage.passwordPlaceholder')"
               required
             />
           </div>
@@ -169,7 +171,7 @@ function handleRegister() {
 
           <div class="login-actions">
             <button type="submit" class="btn btn-primary" :disabled="isLoading">
-              {{ isLoading ? 'Вход...' : 'Войти' }}
+              {{ isLoading ? t('loginPage.loggingIn') : t('loginPage.loginButton') }}
             </button>
 
             <button
@@ -178,28 +180,28 @@ function handleRegister() {
               @click="handleRegister"
               :disabled="isLoading"
             >
-              Регистрация
+              {{ t('loginPage.registerButton') }}
             </button>
           </div>
 
           <!-- Google auth -->
           <div class="social-login">
             <div class="divider">
-              <span>или</span>
+              <span>{{ t('loginPage.or') }}</span>
             </div>
             <GoogleSignIn />
           </div>
 
           <!-- Демо-аккаунты -->
           <div v-if="!isOnlineMode" class="demo-accounts">
-            <div class="demo-accounts-title">Тестовые аккаунты:</div>
+            <div class="demo-accounts-title">{{ t('loginPage.testAccounts') }}:</div>
             <div class="demo-account">
-              <div><strong>Работник:</strong> worker@example.com</div>
-              <div><strong>Пароль:</strong> password123</div>
+              <div><strong>{{ t('loginPage.worker') }}:</strong> worker@example.com</div>
+              <div><strong>{{ t('loginPage.password') }}:</strong> password123</div>
             </div>
             <div class="demo-account">
-              <div><strong>Работодатель:</strong> employer@example.com</div>
-              <div><strong>Пароль:</strong> password123</div>
+              <div><strong>{{ t('loginPage.employer') }}:</strong> employer@example.com</div>
+              <div><strong>{{ t('loginPage.password') }}:</strong> password123</div>
             </div>
           </div>
         </form>

@@ -161,8 +161,7 @@ const closeOfflineMessage = () => {
         <div class="footer-section">
           <h3 class="footer-heading tez-jumush-text">TEZ JUMUSH</h3>
           <p class="footer-text">
-            Платформа для быстрого поиска работы и надежных работников в Кыргызстане. Найдите
-            подходящую работу или сотрудников для ваших задач уже сегодня!
+            {{ t('footerDescription') }}
           </p>
         </div>
 
@@ -212,7 +211,7 @@ const closeOfflineMessage = () => {
           <h3 class="footer-heading">{{ t('socials') }}</h3>
           <div class="social-links">
             <a href="https://t.me/tezJumush" target="_blank" class="social-link" rel="noopener noreferrer">
-              <i class="fab fa-telegram"></i> Telegram
+              <i class="fab fa-telegram"></i> {{ t('socialTelegram') }}
             </a>
             <a
               href="https://www.instagram.com/tezjumush.kg?igsh=b3NodHNpcDBrZ2V3&utm_source=qr"
@@ -220,7 +219,7 @@ const closeOfflineMessage = () => {
               class="social-link"
               rel="noopener noreferrer"
             >
-              <i class="fab fa-instagram"></i> Instagram
+              <i class="fab fa-instagram"></i> {{ t('socialInstagram') }}
             </a>
           </div>
         </div>

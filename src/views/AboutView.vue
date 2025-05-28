@@ -15,38 +15,34 @@ const { t } = useI18n()
             <img src="/img/logo.jpg" alt="Tez Jumush" width="200" />
           </div>
           <div class="about-text">
-            <h2>Что такое Tez Jumush?</h2>
+            <h2>{{ t('aboutWhatIs') }}</h2>
             <p>
-              Tez Jumush - это инновационная платформа, которая соединяет людей, ищущих временную
-              работу, с работодателями, которым требуется выполнение разовых задач.
+              {{ t('aboutDescription') }}
             </p>
             <p>
-              Мы стремимся упростить процесс поиска работы и работников, делая его быстрым,
-              прозрачным и эффективным.
+              {{ t('aboutSimplify') }}
             </p>
 
-            <h3 class="mt-4">Наша миссия</h3>
+            <h3 class="mt-4">{{ t('aboutMission') }}</h3>
             <p>
-              Мы верим, что каждый человек должен иметь возможность быстро найти работу и
-              заработать, когда это необходимо. Наша миссия - создать самую доступную и удобную
-              платформу для поиска временной работы.
+              {{ t('aboutMissionDescription') }}
             </p>
 
-            <h3 class="mt-4">Как это работает?</h3>
+            <h3 class="mt-4">{{ t('aboutHowWorks') }}</h3>
             <ul>
-              <li>Работодатели размещают объявления о работе в нашем Telegram канале</li>
-              <li>Мы публикуем эти объявления на нашем сайте</li>
-              <li>Соискатели могут просматривать вакансии и откликаться на них</li>
-              <li>Работодатели и соискатели договариваются напрямую</li>
+              <li>{{ t('aboutSteps.step1') }}</li>
+              <li>{{ t('aboutSteps.step2') }}</li>
+              <li>{{ t('aboutSteps.step3') }}</li>
+              <li>{{ t('aboutSteps.step4') }}</li>
             </ul>
 
-            <h3 class="mt-4">Наши преимущества</h3>
+            <h3 class="mt-4">{{ t('aboutAdvantages') }}</h3>
             <ul>
-              <li>Быстрый поиск работы и работников</li>
-              <li>Простая и понятная система</li>
-              <li>Прямое общение между работодателем и соискателем</li>
-              <li>Широкий выбор вакансий и соискателей</li>
-              <li>Полностью бесплатно для всех пользователей</li>
+              <li>{{ t('aboutAdvantagesList.adv1') }}</li>
+              <li>{{ t('aboutAdvantagesList.adv2') }}</li>
+              <li>{{ t('aboutAdvantagesList.adv3') }}</li>
+              <li>{{ t('aboutAdvantagesList.adv4') }}</li>
+              <li>{{ t('aboutAdvantagesList.adv5') }}</li>
             </ul>
           </div>
         </div>
@@ -57,15 +53,14 @@ const { t } = useI18n()
       <div class="container">
         <h2 class="text-center">{{ t('aboutTeam') }}</h2>
         <p class="text-center">
-          Tez Jumush - это проект, созданный энтузиастами, которые хотят сделать рынок труда более
-          доступным и эффективным.
+          {{ t('aboutTeamDescription') }}
         </p>
 
         <div class="contact-us mt-5 text-center">
           <h3>{{ t('contactUs') }}</h3>
-          <p>Если у вас есть вопросы или предложения, пожалуйста, свяжитесь с нами:</p>
+          <p>{{ t('aboutContactText') }}</p>
           <a href="https://t.me/tezJumush" target="_blank" class="btn btn-primary mt-3"
-            >Telegram канал</a
+            >{{ t('telegramChannel') }}</a
           >
         </div>
       </div>
