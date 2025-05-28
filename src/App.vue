@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Navbar from './components/Navbar.vue'
+import DevModeToggle from './components/DevModeToggle.vue'
 import { useI18n } from 'vue-i18n'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { i18n as i18nInstance } from './utils/i18n'
@@ -154,6 +155,9 @@ const closeOfflineMessage = () => {
   <div class="app-container">
     <router-view />
   </div>
+  
+  <!-- Development mode toggle (only visible in development) -->
+  <DevModeToggle />
   
   <footer class="footer">
     <div class="container">

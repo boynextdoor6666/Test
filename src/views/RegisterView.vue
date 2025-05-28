@@ -174,42 +174,42 @@ const handleSubmit = async () => {
 
   if (isValid) {
     isLoading.value = true
-    try {
-      let photoData = ''
-      if (profilePhoto.preview) {
-        photoData = profilePhoto.preview
-      }
+      try {
+        let photoData = ''
+        if (profilePhoto.preview) {
+          photoData = profilePhoto.preview
+        }
       
       // Используем демо-регистрацию вместо онлайн-регистрации для тестирования
-      const response = await authAPI.register({
-        name: formData.value.name,
-        email: formData.value.email,
-        phone: formData.value.phone,
-        password: formData.value.password,
-        userType: formData.value.userType,
-        photo: photoData
-      })
+        const response = await authAPI.register({
+          name: formData.value.name,
+          email: formData.value.email,
+          phone: formData.value.phone,
+          password: formData.value.password,
+          userType: formData.value.userType,
+          photo: photoData
+        })
       
-      // Сохраняем пользователя с токеном
-      const userData = {
-        ...response.data.user,
-        token: response.data.token
-      }
-      localStorage.setItem('user', JSON.stringify(userData))
-      isLoading.value = false
-      router.push('/')
-    } catch (err: any) {
-      isLoading.value = false
+        // Сохраняем пользователя с токеном
+        const userData = {
+          ...response.data.user,
+          token: response.data.token
+        }
+        localStorage.setItem('user', JSON.stringify(userData))
+        isLoading.value = false
+        router.push('/')
+      } catch (err: any) {
+        isLoading.value = false
       console.error('Registration error:', err);
       
-      if (err.response?.data?.error) {
-        errors.value.email = err.response.data.error
+        if (err.response?.data?.error) {
+          errors.value.email = err.response.data.error
       } else if (err.message) {
         // Показываем конкретное сообщение об ошибке
         errors.value.email = err.message
-      } else {
-        errors.value.email = t('registerPage.errors.registrationError')
-      }
+        } else {
+          errors.value.email = t('registerPage.errors.registrationError')
+        }
     }
   }
 }

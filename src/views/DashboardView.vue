@@ -638,48 +638,83 @@ const saveProfileChanges = () => {
   showEditProfileModal.value = false
 }
 
+// Добавляем состояние загрузки для кнопки отклика
+const isApplying = ref(false)
+
 // --- Функции для принятия вакансий (для работника) ---
 const applyForJob = async (job: Job) => {
+  // Предотвращаем повторные нажатия
+  if (isApplying.value) return
+  
   try {
-    // Импортируем API для работы с вакансиями
+    isApplying.value = true
+    
+    // Предварительно загружаем API модуль, чтобы избежать задержек
     const { jobsAPI } = await import('@/utils/api')
     
-    // Используем API для отклика на вакансию
-    const result = await jobsAPI.apply(job.id)
+    // Используем таймаут для ограничения времени запроса
+    const applyPromise = jobsAPI.apply(job.id)
+    
+    // Добавляем таймаут в 5 секунд для отмены операции, если она занимает слишком много времени
+    const timeoutPromise = new Promise((_, reject) => {
+      const id = setTimeout(() => {
+        clearTimeout(id)
+        reject(new Error('Превышено время ожидания отклика на вакансию'))
+      }, 5000)
+    })
+    
+    // Используем Promise.race, чтобы выбрать тот промис, который завершится первым
+    const result = await Promise.race([applyPromise, timeoutPromise]) as any
     
     // Если отклик отправлен успешно, обновляем UI
     if (result && result.success) {
-      // Добавляем вакансию в список моих вакансий
-      const jobCopy = {
-        ...job,
-        appliedAt: new Date().toISOString(),
-        status: 'new',
-        applicantData: {
-          id: Date.now(),
-          fullName: user.value.fullName,
-          phone: user.value.phone,
-          email: user.value.email,
-          skills: user.value.skills,
-          experience: user.value.experience,
-        },
-      }
-      
-      // Добавляем в список принятых вакансий если её там ещё нет
+      // Добавляем вакансию в список моих вакансий если её там ещё нет
       const existingJobIndex = myJobs.value.findIndex(j => j.id === job.id)
+      
       if (existingJobIndex === -1) {
+        // Клонируем объект вакансии
+        const jobCopy = {
+          ...job,
+          appliedAt: new Date().toISOString(),
+          status: 'new',
+          applicantData: {
+            id: Date.now(),
+            fullName: user.value.fullName,
+            phone: user.value.phone,
+            email: user.value.email,
+            skills: user.value.skills,
+            experience: user.value.experience,
+          },
+        }
+
+        // Добавляем в список принятых вакансий
         myJobs.value.push(jobCopy)
-        
+
         // Сохраняем в localStorage
         localStorage.setItem('myJobs', JSON.stringify(myJobs.value))
+
+        // Принудительно обновляем список доступных вакансий, чтобы скрыть ту, на которую уже отправлен отклик
+        loadDemoJobs()
       }
       
-      // Показываем уведомление
+      // Показываем уведомление об успехе
       alert(result.message || `Вы успешно откликнулись на вакансию "${job.title}"`)
     }
   } catch (error: any) {
     // Показываем сообщение об ошибке
-    alert(error.message || 'Ошибка при отклике на вакансию')
+    let errorMessage = 'Ошибка при отклике на вакансию'
+    
+    if (error.message) {
+      errorMessage = error.message
+    } else if (error.response?.data?.message) {
+      errorMessage = error.response.data.message
+    }
+    
     console.error('Ошибка при отклике на вакансию:', error)
+    alert(errorMessage)
+  } finally {
+    // Всегда сбрасываем состояние загрузки
+    isApplying.value = false
   }
 }
 
@@ -802,20 +837,52 @@ const editJobErrors = ref({
 })
 
 const openAddJobModal = () => {
+  // Сбрасываем все поля формы
+  newJob.value = {
+    title: '',
+    description: '',
+    salary: '',
+    location: '',
+    phone: user.value.phone || '',
+    date: new Date().toISOString().split('T')[0],
+    remarks: '',
+  }
+  
+  // Сбрасываем все ошибки
+  Object.keys(addJobErrors.value).forEach((key) => ((addJobErrors.value as any)[key] = ''))
+  
+  // Сбрасываем состояние загрузки (на всякий случай)
+  isAddingJob.value = false
+  
+  // Открываем модальное окно
   showAddJobModal.value = true
   showEditJobModal.value = false
-  Object.keys(newJob.value).forEach((key) => ((newJob.value as any)[key] = ''))
-  Object.keys(addJobErrors.value).forEach((key) => ((addJobErrors.value as any)[key] = ''))
-
-  // Предзаполняем данные
-  newJob.value.date = new Date().toISOString().split('T')[0]
-  if (user.value.phone) {
-    newJob.value.phone = user.value.phone
-  }
+  
+  console.log('Модальное окно открыто, форма сброшена')
 }
 
 const closeAddJobModal = () => {
+  // Немедленно закрываем модальное окно
   showAddJobModal.value = false
+  
+  // Сбрасываем все поля формы
+  newJob.value = {
+    title: '',
+    description: '',
+    salary: '',
+    location: '',
+    phone: '',
+    date: '',
+    remarks: '',
+  }
+  
+  // Сбрасываем все ошибки
+  Object.keys(addJobErrors.value).forEach((key) => ((addJobErrors.value as any)[key] = ''))
+  
+  // Сбрасываем состояние загрузки
+  isAddingJob.value = false
+  
+  console.log('Модальное окно закрыто, форма сброшена')
 }
 
 // --- Редактирование вакансии ---
@@ -890,7 +957,13 @@ const handleDeleteJob = (jobId: number) => {
   }
 }
 
-const handleAddJob = () => {
+// Добавляем состояние загрузки для кнопки создания вакансии
+const isAddingJob = ref(false)
+
+const handleAddJob = async () => {
+  // Предотвращаем повторные нажатия
+  if (isAddingJob.value) return
+  
   // Валидация
   let valid = true
   Object.keys(addJobErrors.value).forEach((key) => ((addJobErrors.value as any)[key] = ''))
@@ -920,22 +993,81 @@ const handleAddJob = () => {
   }
   if (!valid) return
 
-  // Добавление вакансии
-  const job = {
-    id: Date.now(),
-    title: newJob.value.title,
-    description: newJob.value.description,
-    salary: newJob.value.salary,
-    location: newJob.value.location,
-    phone: newJob.value.phone,
-    date: newJob.value.date,
-    status: 'new',
-    category: 'Разное', // Добавляем категорию для совместимости с JobsView
-    remarks: newJob.value.remarks || '', // Add remarks field
+  try {
+    isAddingJob.value = true
+    
+    // Подготавливаем данные вакансии
+    const jobData = {
+      title: newJob.value.title,
+      description: newJob.value.description,
+      salary: newJob.value.salary,
+      location: newJob.value.location,
+      phone: newJob.value.phone,
+      date: newJob.value.date,
+      status: 'new',
+      category: 'Разное', // Добавляем категорию для совместимости с JobsView
+      remarks: newJob.value.remarks || '', // Add remarks field
+    }
+    
+    // ВАЖНО: Закрываем модальное окно СРАЗУ после валидации, до любых API-запросов
+    // Создаем копию данных, чтобы не потерять их после закрытия модального окна
+    const jobDataCopy = { ...jobData };
+    
+    // Закрываем модальное окно немедленно
+    showAddJobModal.value = false;
+    console.log('Модальное окно закрыто');
+    
+    // Импортируем API до создания таймаута для избежания проблем с загрузкой модуля
+    const { jobsAPI } = await import('@/utils/api');
+    
+    // После закрытия модального окна выполняем фоновую обработку с коротким таймаутом
+    const timeoutId = setTimeout(async () => {
+      try {
+        console.log('Отправляем запрос на создание вакансии...');
+        const result = await jobsAPI.createJob(jobDataCopy);
+        console.log('Получен результат:', result);
+        
+        if (result && result.success) {
+          // Добавляем новую вакансию в начало списка
+          const newJobData = result.data;
+          jobs.value.unshift(newJobData);
+          console.log('Вакансия добавлена в список jobs:', newJobData);
+          
+          // Обновляем список вакансий
+          loadDemoJobs();
+          console.log('Обновлен список вакансий через loadDemoJobs');
+        } else {
+          console.error('API вернул ошибку или нет success:', result);
+        }
+      } catch (asyncError) {
+        console.error('Ошибка при асинхронном создании вакансии:', asyncError);
+      } finally {
+        // Всегда сбрасываем состояние загрузки
+        isAddingJob.value = false;
+      }
+    }, 100);
+    
+    // Ensure timeout is cleared if component is unmounted
+    onUnmounted(() => {
+      clearTimeout(timeoutId);
+    });
+    
+  } catch (error: any) {
+    // Показываем сообщение об ошибке
+    let errorMessage = 'Ошибка при создании вакансии';
+    
+    if (error.message) {
+      errorMessage = error.message;
+    } else if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    }
+    
+    console.error('Ошибка при создании вакансии:', error);
+    alert(errorMessage);
+    
+    // Сбрасываем состояние загрузки в случае ошибки
+    isAddingJob.value = false;
   }
-  jobs.value.unshift(job)
-  localStorage.setItem('jobs', JSON.stringify(jobs.value))
-  showAddJobModal.value = false
 }
 </script>
 
@@ -1180,8 +1312,10 @@ const handleAddJob = () => {
                   class="btn btn-outline"
                   v-if="job.status === 'new' && userType === 'worker'"
                   @click="applyForJob(job)"
+                  :disabled="isApplying"
                 >
-                  <i class="fas fa-check"></i> {{ t('apply') }}
+                  <i class="fas" :class="isApplying ? 'fa-spinner fa-spin' : 'fa-check'"></i>
+                  {{ isApplying ? 'Отправка...' : t('apply') }}
                 </button>
                 <button 
                   class="btn btn-success" 
@@ -1277,8 +1411,9 @@ const handleAddJob = () => {
               </div>
 
               <div class="job-actions">
-                <button class="btn btn-primary" @click="applyForJob(job)">
-                  <i class="fas fa-check"></i> Откликнуться
+                <button class="btn btn-primary" @click="applyForJob(job)" :disabled="isApplying">
+                  <i class="fas" :class="isApplying ? 'fa-spinner fa-spin' : 'fa-check'"></i>
+                  {{ isApplying ? 'Отправка...' : 'Откликнуться' }}
                 </button>
               </div>
             </div>
@@ -1652,8 +1787,11 @@ const handleAddJob = () => {
           </div>
         </div>
         <div class="modal-actions">
-          <button type="button" class="btn btn-primary" @click="handleAddJob">Добавить</button>
-          <button type="button" class="btn btn-outline" @click="closeAddJobModal">Отмена</button>
+          <button type="button" class="btn btn-primary" @click="handleAddJob" :disabled="isAddingJob">
+            <i class="fas" :class="isAddingJob ? 'fa-spinner fa-spin' : 'fa-plus'"></i>
+            {{ isAddingJob ? 'Добавление...' : 'Добавить' }}
+          </button>
+          <button type="button" class="btn btn-outline" @click="closeAddJobModal" :disabled="isAddingJob">Отмена</button>
         </div>
       </div>
     </div>
