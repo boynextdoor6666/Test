@@ -14,8 +14,8 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3000,
-    strictPort: true,
+    port: 3001,
+    strictPort: false,
     host: true,
     allowedHosts: ['tezjumush-production.up.railway.app'],
     headers: {

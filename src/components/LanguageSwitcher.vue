@@ -30,8 +30,11 @@ const closeDropdown = () => {
 
 const selectLanguage = (langCode: TranslationLanguages) => {
   if (langCode !== currentLocale.value) {
-    switchLanguage(langCode)
-    // Обновить URL с новым языком
+    // Set preferred language in localStorage first
+    localStorage.setItem('preferredLanguage', langCode)
+    // Then call switchLanguage which will read from localStorage
+    switchLanguage()
+    // Update URL with new language
     const currentPath = router.currentRoute.value.path.replace(/^\/(ru|kg)/, '')
     router.push(`/${langCode}${currentPath}`)
   }
@@ -69,7 +72,6 @@ onUnmounted(() => {
   <div class="language-selector" ref="dropdownRef">
     <button @click="toggleDropdown" class="lang-trigger">
       <span :class="['flag', currentFlag]"></span>
-      <span class="lang-name">{{ currentLangName }}</span>
       <i class="fas fa-chevron-down"></i>
     </button>
     <div v-if="isOpen" class="lang-dropdown">
@@ -88,23 +90,24 @@ onUnmounted(() => {
   display: inline-block;
 }
 .lang-trigger {
-  background-color: var(--primary-color);
-  color: white;
+  background-color: transparent;
+  color: var(--text-color);
   border: none;
   border-radius: 4px;
-  padding: 6px 12px;
+  padding: 6px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 .flag {
-  width: 18px;
-  height: 12px;
+  width: 20px;
+  height: 14px;
   display: inline-block;
   background-size: cover;
   background-position: center;
   border-radius: 2px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 .flag-ru {
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 9 6"><rect fill="white" width="9" height="2"/><rect fill="blue" y="2" width="9" height="2"/><rect fill="red" y="4" width="9" height="2"/></svg>');

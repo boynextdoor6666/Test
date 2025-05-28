@@ -95,6 +95,10 @@ export const messages = {
     copyright: 'Все права защищены',
     termsOfUse: 'Правила использования',
     privacyPolicy: 'Политика конфиденциальности',
+    footerDescription: 'Площадка для быстрого поиска работы и сотрудников в Кыргызстане. Удобный сервис для работодателей и соискателей.',
+    socialTelegram: 'Телеграм',
+    socialInstagram: 'Инстаграм',
+    home: 'Главная',
     // About page
     aboutTitle: 'О нас',
     aboutTeam: 'Наша команда',
@@ -279,6 +283,10 @@ export const messages = {
     copyright: 'Бардык укуктар корголгон',
     termsOfUse: 'Колдонуу эрежелери',
     privacyPolicy: 'Купуялуулуk саясаты',
+    footerDescription: 'Кыргызстандагы жумуш жана кызматкерлерди тез табуу үчүн аянтча. Жумуш берүүчүлөр жана жумуш издөөчүлөр үчүн ыңгайлуу кызмат.',
+    socialTelegram: 'Телеграм',
+    socialInstagram: 'Инстаграм',
+    home: 'Башкы бет',
     // About page
     aboutTitle: 'Биз жөнүндө',
     aboutTeam: 'Биздин команда',
