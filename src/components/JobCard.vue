@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import RatingStars from './RatingStars.vue'
 
 // Get i18n instance for translations
 const { t } = useI18n()
@@ -16,6 +17,9 @@ interface Job {
   category?: string // Может быть добавлено из JobsView
   status?: string // Может быть добавлено из DashboardView
   applications?: any[] // Заявки на вакансию
+  employer_rating?: number // Рейтинг работодателя
+  employer_review_count?: number // Количество отзывов о работодателе
+  employer: string
 }
 
 const props = defineProps<{
@@ -51,7 +55,10 @@ function handleEdit() {
 function handleDelete() {
   console.log('Delete button clicked for job:', props.job.id)
   if (confirm(t('deleteConfirmation'))) {
+    console.log('Delete confirmed, emitting delete event with job ID:', props.job.id)
     emit('delete', props.job.id)
+  } else {
+    console.log('Delete cancelled by user')
   }
 }
 
@@ -100,6 +107,19 @@ function formatDate(dateString: string): string {
       <div class="job-detail">
         <i class="fas fa-calendar-alt"></i>
         <span>{{ formatDate(job.date) }}</span>
+      </div>
+      <div class="job-detail employer-info">
+        <i class="fas fa-building"></i>
+        <span>{{ job.employer }}</span>
+        <rating-stars 
+          v-if="job.employer_rating" 
+          :rating="job.employer_rating" 
+          :review-count="job.employer_review_count" 
+          size="sm"
+          :show-value="false"
+          :show-count="false"
+          class="employer-rating"
+        />
       </div>
       <div class="job-applications" v-if="hasApplications && isEmployer">
         <i class="fas fa-user-check"></i>
@@ -233,6 +253,15 @@ function formatDate(dateString: string): string {
   margin-right: var(--spacing-sm);
   color: var(--primary-color);
   text-align: center;
+}
+
+.employer-info {
+  display: flex;
+  align-items: center;
+}
+
+.employer-rating {
+  margin-left: 6px;
 }
 
 .job-applications {

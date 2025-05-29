@@ -2,11 +2,30 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { jobsAPI } from '@/utils/api'
+import RatingStars from '@/components/RatingStars.vue'
+
+interface Job {
+  id: number
+  title: string
+  description: string
+  salary: string
+  location: string
+  phone: string
+  date: string
+  category: string
+  requirements: string[] | string
+  employer: string
+  employer_rating?: number
+  employer_review_count?: number
+  created_at: string
+  updated_at: string
+  error?: string // Для случаев, когда API возвращает ошибку
+}
 
 const route = useRoute()
 const jobId = parseInt(route.params.id as string)
 
-const job = ref<any>(null)
+const job = ref<Job | null>(null)
 const loading = ref(true)
 const error = ref('')
 const applyMessage = ref('')
@@ -82,13 +101,22 @@ async function applyToJob() {
             <div class="job-section" v-if="job.requirements">
               <h2>Требования</h2>
               <ul>
-                <li v-for="(req, index) in job.requirements.split ? job.requirements.split(',') : job.requirements" :key="index">{{ req }}</li>
+                <li v-for="(req, index) in (typeof job.requirements === 'string' ? job.requirements.split(',') : job.requirements)" :key="index">{{ req }}</li>
               </ul>
             </div>
 
             <div class="job-section">
               <h2>Работодатель</h2>
               <p>{{ job.employer }}</p>
+              <div v-if="job.employer_rating" class="employer-rating">
+                <rating-stars 
+                  :rating="job.employer_rating" 
+                  :review-count="job.employer_review_count" 
+                  size="md"
+                  :show-value="true"
+                  :show-count="true"
+                />
+              </div>
             </div>
           </div>
 
@@ -204,10 +232,11 @@ async function applyToJob() {
 
 .job-info-item .value {
   flex: 1;
+  font-weight: 500;
+  color: #333;
 }
 
-.phone {
-  font-weight: bold;
+.job-info-item .phone {
   color: var(--primary-color);
 }
 
@@ -221,12 +250,20 @@ async function applyToJob() {
   display: none; /* Hide WhatsApp button */
 }
 
-.not-found {
-  text-align: center;
-  padding: 50px 0;
+.job-actions {
+  margin-top: 20px;
 }
 
-@media (max-width: 768px) {
+.not-found {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.employer-rating {
+  margin-top: 8px;
+}
+
+@media (max-width: 767px) {
   .job-detail-body {
     flex-direction: column;
   }

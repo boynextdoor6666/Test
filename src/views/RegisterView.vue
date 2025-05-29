@@ -299,14 +299,14 @@ const setUserType = (type: string) => {
           </div>
 
           <div class="form-group">
-            <label for="name">{{ t('name') }}</label>
+            <label for="name">{{ formData.userType === 'employer' ? t('companyName') : t('name') }}</label>
             <input
               type="text"
               id="name"
               v-model="formData.name"
               class="form-control"
               :class="{ 'has-error': errors.name }"
-              :placeholder="t('registerPage.enterYourName')"
+              :placeholder="formData.userType === 'employer' ? t('registerPage.enterCompanyName') : t('registerPage.enterYourName')"
             />
             <div class="error-message" v-if="errors.name">{{ errors.name }}</div>
           </div>

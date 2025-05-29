@@ -190,35 +190,22 @@ const editJobErrors = ref<JobFormErrors>({
 const applyMessage = ref('')
 
 onMounted(async () => {
-  // Проверка авторизации пользователя
-  const userData = localStorage.getItem('user')
-  if (userData) {
+  // Проверяем авторизацию пользователя
+  const userStr = localStorage.getItem('user')
+  if (userStr) {
     try {
-      const user = JSON.parse(userData)
-      console.log('Пользователь авторизован:', user) // Для отладки
+      const userData = JSON.parse(userStr)
       isLoggedIn.value = true
-      userType.value = user.userType || 'worker'
-      console.log('Тип пользователя:', userType.value) // Для отладки
-
-      if (user.phone) {
-        newJob.value.phone = user.phone
-      }
-    } catch (error) {
-      console.error('Ошибка при парсинге данных пользователя:', error)
+      userType.value = userData.userType || ''
+      console.log('Пользователь авторизован:', userType.value)
+    } catch (e) {
+      console.error('Ошибка при проверке авторизации:', e)
     }
   } else {
-    console.log('Пользователь не авторизован') // Для отладки
+    console.log('Пользователь не авторизован')
   }
 
-  // Всегда загружаем вакансии, даже если нет авторизации
-  console.log('Загружаем вакансии...');
-  await loadJobs();
-  console.log('Загружено вакансий:', jobs.value.length);
-  
-  // Для отладки выводим первую вакансию
-  if (jobs.value.length > 0) {
-    console.log('Пример вакансии:', jobs.value[0]);
-  }
+  await loadJobs()
 })
 
 // Обновляем категории при изменении языка
@@ -435,11 +422,27 @@ const handleDeleteJob = async (jobId: number) => {
   console.log('handleDeleteJob вызван с jobId:', jobId)
 
   try {
+    // Показываем дополнительное подтверждение
+    console.log('Отправляем запрос на удаление вакансии:', jobId)
+    
     const res = await jobsAPI.deleteJob(jobId)
-    if (res.message) throw new Error(res.message)
-    await loadJobs()
+    console.log('Результат удаления вакансии:', res)
+    
+    if (res.success) {
+      console.log('Вакансия успешно удалена, обновляем список вакансий')
+      // Перезагружаем список вакансий
+      await loadJobs()
+    } else if (res.message) {
+      console.warn('Не удалось удалить вакансию:', res.message)
+      error.value = res.message
+      alert('Ошибка: ' + res.message)
+    }
   } catch (e: any) {
+    console.error('Ошибка при удалении вакансии:', e)
     error.value = e.message || 'Ошибка при удалении вакансии'
+    
+    // Показываем ошибку пользователю
+    alert('Ошибка при удалении вакансии: ' + error.value)
   }
 }
 
@@ -544,7 +547,7 @@ const handleApply = async (job: Job) => {
               v-for="job in filteredJobs"
               :key="job.id"
               :job="job"
-              :isEmployer="isLoggedIn && userType === 'employer'"
+              :is-employer="userType === 'employer'"
               @edit="openEditJobModal"
               @delete="handleDeleteJob"
               @apply="handleApply"

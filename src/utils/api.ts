@@ -25,6 +25,8 @@ export interface User {
   experience: string
   hasOtherJobs: boolean
   authProvider: string
+  rating?: number // Рейтинг для работодателей (от 1 до 5)
+  reviewCount?: number // Количество отзывов
   token?: string
   password?: string // Only used in demo mode, not in production
 }
@@ -42,6 +44,8 @@ export interface Job {
   requirements: string[]
   employer: string
   employer_photo?: string
+  employer_rating?: number
+  employer_review_count?: number
   urgency: 'low' | 'medium' | 'high'
   employment_type: 'full-time' | 'part-time' | 'freelance' | 'contract'
   user_id: number
@@ -121,7 +125,43 @@ const initDemoUsers = (): void => {
         experience: '',
         hasOtherJobs: false,
         authProvider: 'local',
+        rating: 4.2,
+        reviewCount: 15,
         token: 'demo_token_employer'
+      },
+      {
+        id: 'demo_employer_2',
+        name: 'ООО "Строй Мастер"',
+        email: 'stroy@example.com',
+        password: 'password123',
+        phone: '+996 555 456789',
+        userType: 'employer',
+        photo: '',
+        age: 0,
+        skills: [],
+        experience: '',
+        hasOtherJobs: false,
+        authProvider: 'local',
+        rating: 3.7,
+        reviewCount: 23,
+        token: 'demo_token_employer2'
+      },
+      {
+        id: 'demo_employer_3',
+        name: 'Кафе "Лагман"',
+        email: 'cafe@example.com',
+        password: 'password123',
+        phone: '+996 555 223344',
+        userType: 'employer',
+        photo: '',
+        age: 0,
+        skills: [],
+        experience: '',
+        hasOtherJobs: false,
+        authProvider: 'local',
+        rating: 4.8,
+        reviewCount: 42,
+        token: 'demo_token_employer3'
       }
     ];
     localStorage.setItem('demoUsers', JSON.stringify(demoUsers));
@@ -158,9 +198,9 @@ const api = axios.create({
     'Content-Type': 'application/json'
   },
   timeout: 5000, // Уменьшаем таймаут до 5 секунд для предотвращения зависания запросов
-  // Добавляем настройки для лучшей обработки ошибок сети
+  // Модифицируем validateStatus чтобы обрабатывать 404 как ошибку
   validateStatus: function (status) {
-    return status >= 200 && status < 500; // Обрабатываем только ошибки клиента вручную
+    return status >= 200 && status < 300; // Считаем только 2xx коды успешными
   }
 })
 
@@ -220,16 +260,25 @@ api.interceptors.response.use(
       data: error.response?.data
     })
 
-    // Если API недоступен, автоматически переключаемся в оффлайн режим
+    // Если API недоступен или возвращает 404, автоматически переключаемся в оффлайн режим
     if ((error as any).code === 'NETWORK_ERROR' || 
         error.message.includes('Network Error') || 
         error.message.includes('404') || 
         error.response?.status === 404 ||
         (error as any).code === 'ECONNABORTED' || 
         error.message.includes('timeout')) {
-      console.warn('API unavailable or timeout, switching to offline mode');
+      
+      console.warn('API unavailable, 404 error, or timeout. Switching to offline mode');
       setOfflineMode(true);
+      
+      // Explicitly set isNetworkError for 404 errors to ensure they're handled correctly
       (error as any).isNetworkError = true;
+      
+      // Добавляем специальное свойство для 404 ошибок
+      if (error.response?.status === 404 || error.message.includes('404')) {
+        console.log('Setting is404Error flag on error object');
+        (error as any).is404Error = true;
+      }
       
       // Для таймаутов добавляем специальное свойство
       if ((error as any).code === 'ECONNABORTED' || error.message.includes('timeout')) {
@@ -668,6 +717,8 @@ const generateDemoJobs = (): Job[] => [
     category: 'Доставка',
     requirements: ['Наличие транспорта', 'Ответственность'],
     employer: 'ОсОО "Быстрая доставка"',
+    employer_rating: 4.2,
+    employer_review_count: 15,
     urgency: 'medium' as const,
     employment_type: 'part-time' as const,
     user_id: 1,
@@ -687,6 +738,8 @@ const generateDemoJobs = (): Job[] => [
     category: 'Мероприятия',
     requirements: ['Коммуникабельность', 'Опрятный внешний вид'],
     employer: 'Event Agency "Праздник"',
+    employer_rating: 3.7, 
+    employer_review_count: 23,
     urgency: 'high' as const,
     employment_type: 'freelance' as const,
     user_id: 2,
@@ -706,6 +759,8 @@ const generateDemoJobs = (): Job[] => [
     category: 'Уборка',
     requirements: ['Опыт уборки', 'Наличие инвентаря'],
     employer: 'Строительная компания "Ремонт+"',
+    employer_rating: 4.8,
+    employer_review_count: 42,
     urgency: 'low' as const,
     employment_type: 'contract' as const,
     user_id: 3,
@@ -859,11 +914,13 @@ export const jobsAPI = {
 
   async createJob(jobData: Partial<Job>): Promise<ApiResponse<Job>> {
     // Сразу проверяем, если мы в оффлайн режиме
-    if (isOfflineMode() && !import.meta.env.DEV) {
+    if (isOfflineMode()) {
+      console.log('Создание вакансии в демо-режиме:', jobData);
       return this.createDemoJob(jobData);
     }
     
     try {
+      console.log('Отправка запроса на создание вакансии через API:', jobData);
       const response = await api.post('/jobs', jobData)
       
       // Check if response contains HTML instead of JSON
@@ -911,12 +968,16 @@ export const jobsAPI = {
     const userData = localStorage.getItem('user')
     let employerName = 'Демо работодатель'
     let userId = 1
+    let employerRating = 0
+    let employerReviewCount = 0
 
     if (userData) {
       try {
         const user = JSON.parse(userData)
         employerName = user.name || 'Демо работодатель'
         userId = user.id || 1
+        employerRating = user.rating || 0
+        employerReviewCount = user.reviewCount || 0
       } catch (e) {
         console.error('Error parsing user data:', e)
       }
@@ -932,13 +993,15 @@ export const jobsAPI = {
           category: jobData.category || '',
           date: jobData.date || new Date().toISOString(),
           requirements: [],
-      employer: employerName,
+          employer: employerName,
+          employer_rating: employerRating,
+          employer_review_count: employerReviewCount,
           urgency: 'medium' as const,
           employment_type: 'part-time' as const,
-      user_id: userId,
+          user_id: userId,
           created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      applications_count: 0
+          updated_at: new Date().toISOString(),
+          applications_count: 0
         }
     
     // Save to localStorage for demo mode
@@ -989,24 +1052,77 @@ export const jobsAPI = {
   },
 
   async deleteJob(id: number | string): Promise<ApiResponse<void>> {
-    try {
-      const response = await api.delete(`/jobs/${id}`)
-      return response.data
-    } catch (error: any) {
-      if (error.isNetworkError) {
-        // Delete job from localStorage
-        const savedJobs = JSON.parse(localStorage.getItem('demoJobs') || '[]')
-        const filteredJobs = savedJobs.filter((job: Job) => job.id.toString() !== id.toString())
-        localStorage.setItem('demoJobs', JSON.stringify(filteredJobs))
-        
-        return {
-          data: undefined,
-          success: true,
-          message: 'Вакансия удалена в демо-режиме'
-        }
-      }
-      throw error
+    console.log('Начинаем удаление вакансии с ID:', id);
+    
+    // В демо-режиме сразу удаляем из локального хранилища
+    if (isOfflineMode()) {
+      console.log('Удаление вакансии в демо-режиме:', id);
+      const result = this.deleteDemoJob(id);
+      console.log('Результат удаления в демо-режиме:', result);
+      return result;
     }
+    
+    // Если не в демо-режиме, пытаемся использовать API
+    try {
+      console.log('Отправка запроса на удаление вакансии через API:', id);
+      const response = await api.delete(`/jobs/${id}`);
+      console.log('Ответ API при удалении:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Ошибка при удалении вакансии через API:', error);
+      console.error('Тип ошибки:', typeof error);
+      console.error('Status код:', error.response?.status);
+      console.error('Сообщение ошибки:', error.message);
+      console.error('isNetworkError:', error.isNetworkError);
+      console.error('is404Error:', error.is404Error);
+      
+      // Проверяем все возможные случаи ошибок
+      if (error.is404Error || (error.response && error.response.status === 404)) {
+        console.log('Обнаружен 404 ответ, переключаемся в демо-режим');
+        setOfflineMode(true);
+        return this.deleteDemoJob(id);
+      } else if (error.isNetworkError) {
+        console.log('Сетевая ошибка, переключаемся в демо-режим');
+        setOfflineMode(true);
+        return this.deleteDemoJob(id);
+      } else if (error.message && error.message.includes('404')) {
+        console.log('Сообщение ошибки содержит 404, переключаемся в демо-режим');
+        setOfflineMode(true);
+        return this.deleteDemoJob(id);
+      } else {
+        // Любые другие ошибки тоже обрабатываем в демо-режиме
+        console.log('Неизвестная ошибка при удалении, переключаемся в демо-режим');
+        setOfflineMode(true);
+        return this.deleteDemoJob(id);
+      }
+    }
+  },
+
+  // Вынесем логику удаления в демо-режиме в отдельный метод для переиспользования
+  deleteDemoJob(id: number | string): ApiResponse<void> {
+    // Delete job from localStorage
+    const savedJobs = JSON.parse(localStorage.getItem('demoJobs') || '[]');
+    const filteredJobs = savedJobs.filter((job: Job) => job.id.toString() !== id.toString());
+    
+    // Проверяем, была ли вакансия удалена
+    if (savedJobs.length === filteredJobs.length) {
+      console.warn('Вакансия с ID не найдена:', id);
+      return {
+        data: undefined,
+        success: false,
+        message: 'Вакансия не найдена'
+      };
+    }
+    
+    // Сохраняем обновленный массив
+    localStorage.setItem('demoJobs', JSON.stringify(filteredJobs));
+    console.log('Вакансия успешно удалена из локального хранилища');
+    
+    return {
+      data: undefined,
+      success: true,
+      message: 'Вакансия удалена в демо-режиме'
+    };
   },
 
   async apply(jobId: number | string): Promise<ApiResponse<Application>> {
