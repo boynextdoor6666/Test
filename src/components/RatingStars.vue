@@ -90,6 +90,7 @@ const formattedRating = computed(() => {
 .star {
   color: #FFD700;
   margin-right: 2px;
+  filter: drop-shadow(0px 0px 1px rgba(0, 0, 0, 0.2));
 }
 
 .star:last-child {
@@ -98,14 +99,15 @@ const formattedRating = computed(() => {
 
 .rating-info {
   margin-left: 6px;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: var(--text-secondary);
   display: flex;
   align-items: center;
 }
 
 .rating-value {
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-color);
 }
 
 .rating-count {
@@ -114,14 +116,14 @@ const formattedRating = computed(() => {
 
 /* Размеры звезд */
 .stars-sm .star i {
-  font-size: 0.8rem;
+  font-size: 0.9rem;
 }
 
 .stars-md .star i {
-  font-size: 1rem;
+  font-size: 1.1rem;
 }
 
 .stars-lg .star i {
-  font-size: 1.2rem;
+  font-size: 1.4rem;
 }
 </style> 

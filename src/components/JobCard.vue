@@ -111,15 +111,24 @@ function formatDate(dateString: string): string {
       <div class="job-detail employer-info">
         <i class="fas fa-building"></i>
         <span>{{ job.employer }}</span>
+      </div>
+      
+      <!-- Separated rating display for better visibility -->
+      <div class="job-rating" v-if="job.employer_rating">
+        <div class="rating-label">Рейтинг работодателя:</div>
         <rating-stars 
-          v-if="job.employer_rating" 
           :rating="job.employer_rating" 
-          :review-count="job.employer_review_count" 
-          size="sm"
-          :show-value="false"
-          :show-count="false"
+          :review-count="job.employer_review_count || 0" 
+          size="lg"
+          :show-value="true"
+          :show-count="true"
           class="employer-rating"
         />
+      </div>
+      <!-- Default rating placeholder when no rating exists -->
+      <div class="job-rating no-rating" v-else>
+        <div class="rating-label">Рейтинг работодателя:</div>
+        <div class="rating-placeholder">Нет отзывов</div>
       </div>
       <div class="job-applications" v-if="hasApplications && isEmployer">
         <i class="fas fa-user-check"></i>
@@ -258,10 +267,16 @@ function formatDate(dateString: string): string {
 .employer-info {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .employer-rating {
   margin-left: 6px;
+  padding-left: 8px;
+  border-left: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
 }
 
 .job-applications {
@@ -303,5 +318,42 @@ function formatDate(dateString: string): string {
     flex: 1;
     text-align: center;
   }
+}
+
+.job-rating {
+  display: flex;
+  flex-direction: column;
+  background-color: rgba(240, 240, 255, 0.7);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  margin: 12px 0;
+}
+
+.dark-theme .job-rating {
+  background-color: rgba(30, 30, 50, 0.3);
+}
+
+.rating-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 5px;
+  font-weight: var(--font-weight-medium);
+}
+
+.employer-rating {
+  margin-left: 0;
+  padding-left: 0;
+  border-left: none;
+}
+
+.rating-placeholder {
+  color: var(--text-secondary);
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+.no-rating {
+  background-color: rgba(240, 240, 240, 0.5);
 }
 </style>

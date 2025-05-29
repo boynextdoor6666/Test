@@ -107,15 +107,21 @@ async function applyToJob() {
 
             <div class="job-section">
               <h2>Работодатель</h2>
-              <p>{{ job.employer }}</p>
-              <div v-if="job.employer_rating" class="employer-rating">
-                <rating-stars 
-                  :rating="job.employer_rating" 
-                  :review-count="job.employer_review_count" 
-                  size="md"
-                  :show-value="true"
-                  :show-count="true"
-                />
+              <div class="employer-info">
+                <div class="employer-name">{{ job.employer }}</div>
+                <div v-if="job.employer_rating" class="employer-rating-container">
+                  <div class="rating-label">Рейтинг работодателя:</div>
+                  <rating-stars 
+                    :rating="job.employer_rating" 
+                    :review-count="job.employer_review_count" 
+                    size="lg"
+                    :show-value="true"
+                    :show-count="true"
+                  />
+                </div>
+                <div v-else class="employer-no-rating">
+                  Нет отзывов
+                </div>
               </div>
             </div>
           </div>
@@ -259,8 +265,40 @@ async function applyToJob() {
   padding: 40px 20px;
 }
 
-.employer-rating {
-  margin-top: 8px;
+.employer-info {
+  margin-top: 15px;
+}
+
+.employer-name {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+
+.employer-rating-container {
+  background-color: rgba(240, 240, 255, 0.7);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 15px;
+  margin: 10px 0;
+  display: inline-block;
+  min-width: 250px;
+}
+
+.rating-label {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.employer-no-rating {
+  color: var(--text-secondary);
+  font-style: italic;
+  background-color: rgba(240, 240, 240, 0.5);
+  padding: 10px;
+  border-radius: var(--radius-md);
+  display: inline-block;
+  margin-top: 10px;
 }
 
 @media (max-width: 767px) {

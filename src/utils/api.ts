@@ -985,6 +985,21 @@ export const jobsAPI = {
         userId = user.id || 1
         employerRating = user.rating || 0
         employerReviewCount = user.reviewCount || 0
+        
+        // If the user is an employer without a rating, give them a default rating
+        if (user.userType === 'employer' && !user.rating) {
+          employerRating = 4.0;
+          employerReviewCount = 5;
+          
+          // Save the rating for future jobs
+          const demoUsers = JSON.parse(localStorage.getItem('demoUsers') || '[]');
+          const userIndex = demoUsers.findIndex((u: any) => u.id === user.id);
+          if (userIndex !== -1) {
+            demoUsers[userIndex].rating = employerRating;
+            demoUsers[userIndex].reviewCount = employerReviewCount;
+            localStorage.setItem('demoUsers', JSON.stringify(demoUsers));
+          }
+        }
       } catch (e) {
         console.error('Error parsing user data:', e)
       }
@@ -1287,44 +1302,5 @@ export const jobsAPI = {
     }
   }
 }
-
-// Utility functions for development mode
-export const devUtils = {
-  // Toggle between online and offline modes
-  toggleMode: (): void => {
-    if (import.meta.env.DEV) {
-      const newMode = !isOfflineMode();
-      setOfflineMode(newMode);
-      console.log(`[DEV] Manually toggled to ${newMode ? 'OFFLINE/DEMO' : 'ONLINE'} mode`);
-    } else {
-      console.warn('toggleMode is only available in development mode');
-    }
-  },
-  
-  // Force online mode
-  forceOnline: (): void => {
-    if (import.meta.env.DEV) {
-      setOfflineMode(false);
-      console.log('[DEV] Forced ONLINE mode');
-    } else {
-      console.warn('forceOnline is only available in development mode');
-    }
-  },
-  
-  // Force offline mode
-  forceOffline: (): void => {
-    if (import.meta.env.DEV) {
-      setOfflineMode(true);
-      console.log('[DEV] Forced OFFLINE/DEMO mode');
-    } else {
-      console.warn('forceOffline is only available in development mode');
-    }
-  },
-  
-  // Get current mode
-  getCurrentMode: (): string => {
-    return isOfflineMode() ? 'OFFLINE/DEMO' : 'ONLINE';
-  }
-};
 
 export default api
