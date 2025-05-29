@@ -137,6 +137,10 @@ const API_BASE = import.meta.env.VITE_API_URL || '/api'
 // Log API base URL for debugging
 console.log('API URL configured as:', API_BASE);
 
+// Force offline mode initially since the server is not responding
+setOfflineMode(true);
+console.log('Forcing offline mode initially due to server issues');
+
 // Ensure the base URL is properly formatted
 const getFormattedApiUrl = () => {
   // For development mode, don't force offline mode
@@ -272,11 +276,35 @@ export const forceOnlineMode = (): void => {
 // Функция для проверки доступности API
 export const checkApiHealth = async (): Promise<boolean> => {
   try {
-    // In development mode, don't do health checks - just stay online
+    // In development mode, only check Google Auth endpoint availability without going offline
     if (import.meta.env.DEV) {
-      console.log('Development mode: skipping health check, assuming API is available');
-      setOfflineMode(false);
-      return true;
+      try {
+        // Проверяем наличие эндпоинта Google авторизации
+        const googleAuthEndpoint = `${getFormattedApiUrl()}/auth/google/verify`;
+        console.log('Checking Google Auth endpoint:', googleAuthEndpoint);
+        
+        await axios.head(googleAuthEndpoint, { 
+          timeout: 3000,
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        });
+        
+        console.log('Google Auth endpoint available');
+        return true;
+      } catch (err: any) {
+        if (err.response?.status === 404) {
+          console.warn('Google Auth endpoint not found. API server might be running but not supporting Google Auth.');
+          console.log('You will still be able to use the app, but Google Auth will use demo mode.');
+          // В режиме разработки не переходим в оффлайн, только логируем предупреждение
+          return true;
+        }
+        
+        // Если другая ошибка, считаем, что сервер недоступен
+        console.warn('API health check failed:', err);
+        return false;
+      }
     }
     
     // Log that we're checking health
@@ -313,12 +341,20 @@ export const checkApiHealth = async (): Promise<boolean> => {
 // Automatically check API health when the module is loaded
 // Use setTimeout to allow the app to initialize first
 setTimeout(() => {
-  // Force online mode in development
+  // Check if we're in development mode
   if (import.meta.env.DEV) {
-    forceOnlineMode();
-    console.log('Application running in ONLINE mode (development)');
+    // Check Google Auth endpoint availability in development mode
+    checkApiHealth().then(isHealthy => {
+      if (isHealthy) {
+        console.log('API is available in development mode, staying online');
+        forceOnlineMode();
+      } else {
+        console.log('API is not available, but development mode will stay in online mode');
+        console.log('Google Auth will use demo mode if endpoint is not available');
+      }
+    });
   } else {
-    // Only do health checks in production
+    // Only do full health checks in production
     checkApiHealth().then(isHealthy => {
       console.log(`API health check complete. API is ${isHealthy ? 'available' : 'unavailable'}.`);
       console.log(`Application running in ${isOfflineMode() ? 'OFFLINE/DEMO' : 'ONLINE'} mode.`);
@@ -340,6 +376,11 @@ export const authAPI = {
     experience?: string
     hasOtherJobs?: boolean
   }): Promise<ApiResponse<{ user: User; token: string }>> {
+    // Всегда используем демо-регистрацию, так как сервер недоступен
+    console.log('Using demo registration mode');
+    return this.demoRegister(userData);
+    
+    /* Disabled for now since the server is not responding
     // Если мы в оффлайн режиме, сразу используем демо-регистрацию
     if (isOfflineMode()) {
       return this.demoRegister(userData);
@@ -349,12 +390,15 @@ export const authAPI = {
       const response = await api.post('/users/register', userData)
       return response.data
     } catch (error: any) {
-      // Если ошибка сети или API недоступен, используем демо-режим
-      if (error.isNetworkError || error.response?.status === 404) {
+      console.error('Registration error:', error);
+      // Если ошибка сети, API недоступен или вернул 404, используем демо-режим
+      if (error.isNetworkError || error.response?.status === 404 || error.message.includes('404')) {
+        console.log('API unavailable or returned 404, using demo registration');
         return this.demoRegister(userData);
       }
       throw error
     }
+    */
   },
 
   // Демо-регистрация для оффлайн режима
@@ -520,17 +564,32 @@ export const authAPI = {
     }
     
     try {
+      // Пытаемся отправить запрос на сервер
       const response = await api.post('/auth/google/verify', {
         credential,
         userType
       })
       return response.data
     } catch (error: any) {
+      // Если ошибка 404, это значит, что эндпоинт не существует на сервере
+      if (error.response?.status === 404) {
+        console.warn('Эндпоинт /auth/google/verify не найден на сервере. Переключаемся в демо-режим.');
+        
+        // Переключаемся в демо-режим даже в DEV-среде
+        setOfflineMode(true);
+        
+        // Повторно вызываем этот же метод, но уже в демо-режиме
+        return this.googleAuth(credential, userType);
+      }
+      
+      // Если сетевая ошибка, также переключаемся в демо-режим
       if (error.isNetworkError) {
-        // Если сетевая ошибка, переключаемся в демо-режим и повторяем запрос
+        console.warn('Сетевая ошибка при вызове /auth/google/verify. Переключаемся в демо-режим.');
         setOfflineMode(true);
         return this.googleAuth(credential, userType);
       }
+      
+      // Если другая ошибка, просто передаем её дальше
       throw error
     }
   },

@@ -1,6 +1,10 @@
 import { Router } from 'express'
 import jwt from 'jsonwebtoken'
 import pool from '../db'
+import { OAuth2Client } from 'google-auth-library'
+
+// Инициализируем Google OAuth клиент
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
 
 const router = Router()
 
@@ -14,36 +18,31 @@ interface GoogleUser {
 }
 
 // Декодирование и верификация Google JWT токена
-function verifyGoogleToken(token: string): GoogleUser | null {
+// Оставляем для обратной совместимости, но рекомендуем использовать OAuth2Client напрямую
+async function verifyGoogleToken(token: string): Promise<GoogleUser | null> {
   try {
-    // В реальном проекте здесь должна быть верификация через Google API
-    // Для демо используем простое декодирование
-    const base64Url = token.split('.')[1]
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map(function (c) {
-          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-        })
-        .join('')
-    )
+    // Используем официальную библиотеку Google Auth
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID
+    });
     
-    const decoded = JSON.parse(jsonPayload)
+    const payload = ticket.getPayload();
+    if (!payload) return null;
     
     // Базовая валидация
-    if (!decoded.email || !decoded.name) {
-      return null
+    if (!payload.email || !payload.name) {
+      return null;
     }
 
     return {
-      email: decoded.email,
-      name: decoded.name,
-      picture: decoded.picture,
-      given_name: decoded.given_name,
-      family_name: decoded.family_name,
-      email_verified: decoded.email_verified
-    }
+      email: payload.email,
+      name: payload.name,
+      picture: payload.picture,
+      given_name: payload.given_name,
+      family_name: payload.family_name,
+      email_verified: payload.email_verified
+    };
   } catch (error) {
     console.error('Error verifying Google token:', error)
     return null
@@ -61,13 +60,26 @@ router.post('/verify', async (req, res) => {
       })
     }
 
-    // Верифицируем Google токен
-    const googleUser = verifyGoogleToken(credential)
+    // Верифицируем Google токен с помощью официальной библиотеки
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID
+    });
     
-    if (!googleUser) {
+    // Получаем данные пользователя из токена
+    const payload = ticket.getPayload();
+    
+    if (!payload) {
       return res.status(400).json({ 
         error: 'Неверный Google credential token' 
       })
+    }
+
+    const googleUser = {
+      email: payload.email,
+      name: payload.name,
+      picture: payload.picture,
+      email_verified: payload.email_verified
     }
 
     if (!googleUser.email_verified) {
@@ -144,27 +156,34 @@ router.post('/verify', async (req, res) => {
     )
 
     res.json({
+      success: true,
       message: isNewUser ? 'Аккаунт успешно создан через Google' : 'Успешный вход через Google',
-      token,
-      isNewUser,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone || '',
-        userType: user.user_type,
-        photo: user.photo || '',
-        age: user.age || 0,
-        skills: user.skills ? JSON.parse(user.skills) : [],
-        experience: user.experience || '',
-        hasOtherJobs: user.has_other_jobs || false,
-        authProvider: 'google'
-      }
+      data: {
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone || '',
+          userType: user.user_type,
+          photo: user.photo || '',
+          age: user.age || 0,
+          skills: user.skills ? JSON.parse(user.skills) : [],
+          experience: user.experience || '',
+          hasOtherJobs: user.has_other_jobs || false,
+          authProvider: 'google'
+        }
+      },
+      isNewUser
     })
 
   } catch (error) {
     console.error('Google auth error:', error)
-    res.status(500).json({ error: 'Ошибка при аутентификации через Google' })
+    res.status(401).json({
+      success: false,
+      message: 'Ошибка аутентификации Google',
+      error: error instanceof Error ? error.message : 'Неизвестная ошибка'
+    })
   }
 })
 
@@ -180,7 +199,7 @@ router.post('/link', async (req, res) => {
     }
 
     // Верифицируем Google токен
-    const googleUser = verifyGoogleToken(credential)
+    const googleUser = await verifyGoogleToken(credential)
     
     if (!googleUser) {
       return res.status(400).json({ 

@@ -157,7 +157,8 @@ export const messages = {
         passwordsDoNotMatch: 'Пароли не совпадают',
         acceptTerms: 'Необходимо принять условия',
         enterValidPhone: 'Введите корректный номер телефона',
-        demoModeRegistrationUnavailable: 'В демо режиме регистрация недоступна. Используйте тестовые аккаунты.'
+        demoModeRegistrationUnavailable: 'В демо режиме регистрация недоступна. Используйте тестовые аккаунты.',
+        invalidResponse: 'Некорректный ответ от сервера. Пожалуйста, попробуйте позже.'
       },
       googleOAuth: {
         errorTitle: 'Ошибка авторизации Google'
@@ -248,7 +249,9 @@ export const messages = {
         titleSpan: 'Tez Jumush сегодня!',
         text: 'Создайте учетную запись прямо сейчас и получите доступ ко всем возможностям нашей платформы',
         registerBtn: 'Зарегистрироваться',
-        postJobBtn: 'Разместить вакансию'
+        postJobBtn: 'Разместить вакансию',
+        button: 'Начать сейчас',
+        guarantee: 'Никаких скрытых платежей. Базовые функции всегда бесплатны.'
       },
       features: {
         title: 'Почему выбирают нас',
@@ -522,7 +525,8 @@ export const messages = {
         passwordsDoNotMatch: 'Сырсөздөр дал келбейт',
         acceptTerms: 'Шарттарды кабыл алуу керек',
         enterValidPhone: 'Туура телефон номерин киргизиңиз',
-        demoModeRegistrationUnavailable: 'Демо режимде каттоо жеткиликтүү эмес. Тесттик аккаунттарды колдонуңуз.'
+        demoModeRegistrationUnavailable: 'Демо режимде каттоо жеткиликтүү эмес. Тесттик аккаунттарды колдонуңуз.',
+        invalidResponse: 'Серверден туура эмес жооп. Кайрадан аракет кылыңыз.'
       },
       googleOAuth: {
         errorTitle: 'Google аутентификация катасы'
@@ -613,7 +617,9 @@ export const messages = {
         titleSpan: 'колдоно баштаңыз!',
         text: 'Азыр эсеп түзүп, биздин платформабыздын бардык мүмкүнчүлүктөрүнө жетиңиз',
         registerBtn: 'Катталуу',
-        postJobBtn: 'Вакансия жайгаштыруу'
+        postJobBtn: 'Вакансия жайгаштыруу',
+        button: 'Баштаңыз',
+        guarantee: 'Жашыруун төлөмдөр жок. Негизги функциялар дайыма акысыз.'
       },
       features: {
         title: 'Эмне үчүн бизди тандашат',

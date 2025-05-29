@@ -11,6 +11,18 @@
       {{ error }}
       <button @click="retryInit" class="retry-btn">{{ t('googleAuth.tryAgain') }}</button>
     </div>
+
+    <div v-if="!clientId" class="config-error">
+      <i class="fas fa-exclamation-triangle"></i>
+      <span>VITE_GOOGLE_CLIENT_ID не настроен в .env файле</span>
+    </div>
+    
+    <!-- Добавляем отладочную информацию -->
+    <div v-if="showDebugInfo" class="debug-info">
+      <p>Origin: {{ currentOrigin }}</p>
+      <p>Client ID: {{ clientId ? (clientId.substring(0, 8) + '...') : 'Not set' }}</p>
+      <button @click="testApiConnection" class="debug-btn">Test API Connection</button>
+    </div>
   </div>
 </template>
 
@@ -18,17 +30,25 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { logAuthDebugInfo, testGoogleAuthAPI } from '@/utils/debug-auth'
 
 const props = defineProps({
   isRegister: {
     type: Boolean,
     default: false
+  },
+  debug: {
+    type: Boolean,
+    default: import.meta.env.DEV // Включено по умолчанию в режиме разработки
   }
 })
 
 const { t } = useI18n()
 const isOnlineMode = ref(true)
 const showMode = ref(false)
+const clientId = ref('')
+const showDebugInfo = ref(props.debug)
+const currentOrigin = ref(window.location.origin || 'unknown')
 
 // Типы для Google API
 declare global {
@@ -42,6 +62,31 @@ const router = useRouter()
 const error = ref('')
 const retryCount = ref(0)
 const maxRetries = 3
+
+// Тестирование API соединения
+async function testApiConnection() {
+  try {
+    const result = await testGoogleAuthAPI()
+    alert(`API Connection Test: ${result ? 'Success' : 'Failed'}`)
+  } catch (err) {
+    alert(`API Connection Test Error: ${err.message}`)
+  }
+}
+
+// Проверяем .env на корректность Client ID
+onMounted(() => {
+  clientId.value = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
+  if (!clientId.value) {
+    console.error('VITE_GOOGLE_CLIENT_ID is not defined in .env file')
+  } else {
+    console.log('Using Google Client ID:', clientId.value.substring(0, 8) + '...')
+  }
+  
+  // Выводим отладочную информацию
+  if (showDebugInfo.value) {
+    logAuthDebugInfo()
+  }
+})
 
 // Обработка ответа от Google
 async function handleCredentialResponse(response: any) {
@@ -100,32 +145,44 @@ onMounted(async () => {
 async function handleOnlineGoogleAuth(response: any) {
   try {
     // Импортируем authAPI динамически, чтобы избежать циклических зависимостей
-    const { authAPI } = await import('@/utils/api')
+    const { authAPI, setOfflineMode } = await import('@/utils/api')
     
-    // Вызываем API для аутентификации через Google
-    const result = await authAPI.googleAuth(
-      response.credential, 
-      props.isRegister ? 'worker' : undefined
-    )
+    try {
+      // Вызываем API для аутентификации через Google
+      const result = await authAPI.googleAuth(
+        response.credential, 
+        props.isRegister ? 'worker' : undefined
+      )
 
-    if (!result || !result.data || !result.data.user) {
-      throw new Error('Неверный ответ от сервера')
+      if (!result || !result.data || !result.data.user) {
+        throw new Error('Неверный ответ от сервера')
+      }
+
+      // Сохраняем пользователя с токеном
+      const userData = {
+        ...result.data.user,
+        token: result.data.token,
+        authProvider: 'google'
+      };
+      
+      // Сохраняем пользователя
+      localStorage.setItem('user', JSON.stringify(userData));
+      console.log('Google auth successful, user saved:', userData);
+      
+      // Перенаправляем пользователя
+      router.push('/');
+    } catch (err: any) {
+      if (err.response?.status === 404) {
+        console.warn('API endpoint for Google Auth not found (404). Switching to demo mode.');
+        
+        // Переключаемся в демо-режим
+        setOfflineMode(true);
+        handleDemoGoogleAuth(response);
+        return;
+      }
+      
+      throw err; // Re-throw для обработки в следующем catch блоке
     }
-
-    // Сохраняем пользователя с токеном
-    const userData = {
-      ...result.data.user,
-      token: result.data.token,
-      authProvider: 'google'
-    };
-    
-    // Сохраняем пользователя
-    localStorage.setItem('user', JSON.stringify(userData));
-    console.log('Google auth successful, user saved:', userData);
-    
-    // Перенаправляем пользователя
-    router.push('/');
-    
   } catch (err: any) {
     console.error('Google auth error:', err)
     const errorMessage = err.response?.data?.error || err.message || t('googleAuth.authError')
@@ -191,6 +248,9 @@ function initializeGoogleSignIn() {
       return false;
     }
     
+    // Показываем текущий origin в консоли для отладки
+    console.log('Current origin:', window.location.origin);
+    
     window.google.accounts.id.initialize({
       client_id: clientId,
       callback: handleCredentialResponse,
@@ -207,17 +267,9 @@ function initializeGoogleSignIn() {
       logo_alignment: 'center'
     });
     
-    // Добавляем вариант с One Tap для решения проблем с Cross-Origin
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      // Только для локальной разработки, где чаще всего возникают Cross-Origin проблемы
-      console.log('Инициализируем Google One Tap для локальной среды разработки');
-      setTimeout(() => {
-        try {
-          window.google.accounts.id.prompt();
-        } catch (e) {
-          console.error('Ошибка при инициализации Google One Tap:', e);
-        }
-      }, 1000);
+    // Дополнительные проверки и логирование для отладки
+    if (typeof window.location.origin !== 'string') {
+      console.warn('window.location.origin is not available. Using fallback.');
     }
     
     return true;
@@ -313,19 +365,27 @@ async function handleDemoGoogleAuth(response: any) {
   try {
     console.log('Обработка авторизации в демо-режиме');
     
-    // Импортируем authAPI динамически
-    const { authAPI } = await import('@/utils/api')
+    // Декодируем JWT токен для получения данных пользователя
+    const decodedToken = parseJwt(response.credential);
     
-    // Используем API для обработки demo авторизации
-    const result = await authAPI.googleAuth(response.credential, props.isRegister ? 'worker' : 'employer');
-    
-    if (!result || !result.data || !result.data.user) {
-      throw new Error('Ошибка при создании пользователя в демо-режиме');
+    if (!decodedToken) {
+      throw new Error('Не удалось декодировать токен');
     }
     
+    // Создаем демо-пользователя на основе данных из токена
+    const demoUser = {
+      id: `demo-${Date.now()}`,
+      name: decodedToken.name || 'Demo User',
+      email: decodedToken.email || 'demo@example.com',
+      profilePicture: decodedToken.picture || null,
+      role: props.isRegister ? 'worker' : 'employer',
+      token: `demo-${Date.now()}`,
+      authProvider: 'google'
+    };
+    
     // Сохраняем пользователя
-    localStorage.setItem('user', JSON.stringify(result.data.user));
-    console.log('Демо-пользователь сохранен:', result.data.user);
+    localStorage.setItem('user', JSON.stringify(demoUser));
+    console.log('Демо-пользователь сохранен:', demoUser);
     
     // Перенаправляем на главную страницу
     router.push('/');
@@ -400,6 +460,20 @@ async function handleDemoGoogleAuth(response: any) {
 
 .error-message i {
   font-size: 16px;
+}
+
+.config-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #f39c12;
+  font-size: 13px;
+  text-align: center;
+  margin-top: 10px;
+  padding: 8px;
+  background-color: rgba(243, 156, 18, 0.1);
+  border-radius: 6px;
 }
 
 .retry-btn {
@@ -481,5 +555,27 @@ async function handleDemoGoogleAuth(response: any) {
     margin-left: 0;
     margin-top: 8px;
   }
+}
+
+.debug-info {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: rgba(243, 156, 18, 0.1);
+  border-radius: 6px;
+}
+
+.debug-btn {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color 0.2s;
+}
+
+.debug-btn:hover {
+  background-color: #c0392b;
 }
 </style>

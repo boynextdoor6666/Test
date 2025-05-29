@@ -1,9 +1,10 @@
 // src/views/LoginView.vue - Обновленная версия с backend интеграцией
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import GoogleSignIn from '@/components/GoogleSignIn.vue'
+import GoogleSignInDev from '@/components/GoogleSignInDev.vue'
 import { authAPI } from '@/utils/api'
 
 const router = useRouter()
@@ -18,6 +19,7 @@ const loginForm = ref({
 const error = ref('')
 const isLoading = ref(false)
 const isOnlineMode = ref(false)
+const isDev = ref(import.meta.env.DEV)
 
 // Проверяем доступность backend
 onMounted(async () => {
