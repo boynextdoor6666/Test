@@ -941,7 +941,14 @@ export const jobsAPI = {
         return this.createDemoJob(jobData);
       }
       
-      return response.data
+      // Ensure the response has a success flag
+      if (response.data) {
+        if (response.data.success === undefined) {
+          response.data.success = true;
+        }
+      }
+      
+      return response.data;
     } catch (error: any) {
       console.log('Ошибка при создании вакансии через API:', error);
       
@@ -958,7 +965,7 @@ export const jobsAPI = {
         
         return this.createDemoJob(jobData);
       }
-      throw error
+      throw error;
     }
   },
   
@@ -983,26 +990,26 @@ export const jobsAPI = {
       }
     }
 
-        const newJob: Job = {
-          id: Date.now(),
-          title: jobData.title || '',
-          description: jobData.description || '',
-          salary: jobData.salary || '',
-          location: jobData.location || '',
-          phone: jobData.phone || '',
-          category: jobData.category || '',
-          date: jobData.date || new Date().toISOString(),
-          requirements: [],
-          employer: employerName,
-          employer_rating: employerRating,
-          employer_review_count: employerReviewCount,
-          urgency: 'medium' as const,
-          employment_type: 'part-time' as const,
-          user_id: userId,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          applications_count: 0
-        }
+    const newJob: Job = {
+      id: Date.now(),
+      title: jobData.title || '',
+      description: jobData.description || '',
+      salary: jobData.salary || '',
+      location: jobData.location || '',
+      phone: jobData.phone || '',
+      category: jobData.category || '',
+      date: jobData.date || new Date().toISOString(),
+      requirements: [],
+      employer: employerName,
+      employer_rating: employerRating,
+      employer_review_count: employerReviewCount,
+      urgency: 'medium' as const,
+      employment_type: 'part-time' as const,
+      user_id: userId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      applications_count: 0
+    }
     
     // Save to localStorage for demo mode
     const savedJobs = JSON.parse(localStorage.getItem('demoJobs') || '[]')
@@ -1011,10 +1018,10 @@ export const jobsAPI = {
     
     console.log('Вакансия создана в демо-режиме:', newJob)
         
-        return {
-          data: newJob,
-          success: true,
-          message: 'Вакансия создана в демо-режиме'
+    return {
+      data: newJob,
+      success: true,
+      message: 'Вакансия создана в демо-режиме'
     }
   },
 

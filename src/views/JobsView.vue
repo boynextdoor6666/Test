@@ -90,27 +90,17 @@ async function loadJobs() {
     }
   } catch (e: any) {
     console.error('Ошибка при загрузке вакансий:', e)
-    error.value = `Ошибка при загрузке вакансий: ${e.message || 'Неизвестная ошибка'}`
+    
+    // Проверяем, является ли это сообщением об успехе
+    if (e.message && e.message.includes('создана в демо-режиме')) {
+      console.log('Получено сообщение об успешном создании:', e.message)
+      // Не устанавливаем ошибку, если это сообщение об успехе
+    } else {
+      error.value = `Ошибка при загрузке вакансий: ${e.message || 'Неизвестная ошибка'}`
+    }
+    
     // Используем демо-данные при ошибке
-    jobs.value = [
-      {
-        id: 1,
-        title: 'Демо вакансия при ошибке',
-        description: 'Это демо-вакансия, созданная из-за ошибки загрузки',
-        salary: '1000 сом',
-        location: 'Бишкек',
-        phone: '+996 555 123456',
-        date: new Date().toISOString(),
-        category: 'Разное',
-        requirements: ['Демо-требование'],
-        employer: 'Демо-работодатель',
-        urgency: 'medium',
-        employment_type: 'part-time',
-        user_id: 1,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-    ]
+    jobs.value = jobsAPI.getDemoJobs();
   } finally {
     loading.value = false
   }
@@ -334,15 +324,40 @@ const handleAddJob = async () => {
   if (!valid) return
 
   try {
+    error.value = '' // Очищаем ошибку перед запросом
+    loading.value = true // Показываем индикатор загрузки
+    
     const res = await jobsAPI.createJob({
       ...newJob.value,
       id: undefined // id не должен быть null
     })
-    if (res.message) throw new Error(res.message)
+    
+    // Всегда закрываем модальное окно при успешном создании
     showAddJobModal.value = false
+    
+    // Очищаем форму для следующего добавления
+    newJob.value = {
+      id: null,
+      title: '',
+      description: '',
+      salary: '',
+      location: '',
+      phone: '',
+      category: t('categories.other'),
+      date: new Date().toISOString().split('T')[0], // Текущая дата
+    }
+    
+    // Показываем уведомление об успехе
+    alert('Вакансия успешно создана!')
+    
+    // Перезагружаем список вакансий
     await loadJobs()
   } catch (e: any) {
+    console.error('Ошибка при добавлении вакансии:', e)
     error.value = e.message || 'Ошибка при добавлении вакансии'
+    alert('Ошибка: ' + error.value)
+  } finally {
+    loading.value = false // Скрываем индикатор загрузки
   }
 }
 
