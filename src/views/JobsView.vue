@@ -52,55 +52,24 @@ const jobs = ref<Job[]>([])
 const loading = ref(true)
 const error = ref('')
 
-// Загрузка вакансий с backend
-async function loadJobs() {
+// Загрузка вакансий
+const loadJobs = async () => {
   loading.value = true
   error.value = ''
+  
   try {
-    console.log('Вызываем API для получения вакансий...')
-    const result = await jobsAPI.getJobs()
-    console.log('Получен ответ от API:', result)
-    
-    if (Array.isArray(result)) {
-      jobs.value = result
-      console.log(`Загружено ${jobs.value.length} вакансий`)
+    const response = await jobsAPI.getJobs()
+    if (response && response.data) {
+      jobs.value = response.data
     } else {
-      console.error('Неверный формат данных:', result)
-      error.value = 'Неверный формат данных от сервера'
-      // Используем демо-данные
-      jobs.value = [
-        {
-          id: 1,
-          title: 'Демо вакансия',
-          description: 'Это демо-вакансия, созданная из-за ошибки загрузки',
-          salary: '1000 сом',
-          location: 'Бишкек',
-          phone: '+996 555 123456',
-          date: new Date().toISOString(),
-          category: 'Разное',
-          requirements: ['Демо-требование'],
-          employer: 'Демо-работодатель',
-          urgency: 'medium',
-          employment_type: 'part-time',
-          user_id: 1,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ]
+      jobs.value = []
     }
   } catch (e: any) {
     console.error('Ошибка при загрузке вакансий:', e)
+    error.value = `Ошибка при загрузке вакансий: ${e.message || 'Неизвестная ошибка'}`
     
-    // Проверяем, является ли это сообщением об успехе
-    if (e.message && e.message.includes('создана в демо-режиме')) {
-      console.log('Получено сообщение об успешном создании:', e.message)
-      // Не устанавливаем ошибку, если это сообщение об успехе
-    } else {
-      error.value = `Ошибка при загрузке вакансий: ${e.message || 'Неизвестная ошибка'}`
-    }
-    
-    // Используем демо-данные при ошибке
-    jobs.value = jobsAPI.getDemoJobs();
+    // В случае ошибки показываем пустой список
+    jobs.value = []
   } finally {
     loading.value = false
   }

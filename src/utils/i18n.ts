@@ -343,23 +343,6 @@ export const messages = {
       nanny: 'Няни',
       other: 'Разное',
     },
-    // Google Auth
-    loginWithGoogle: 'Google менен кирүү',
-    registerWithGoogle: 'Google менен катталуу',
-    // Add Google Auth error messages and UI text
-    googleAuth: {
-      missingClientId: 'Google Client ID не настроен. Пожалуйста, свяжитесь с администратором.',
-      tryAgain: 'Попробовать снова',
-      authError: 'Ошибка авторизации Google',
-      loadError: 'Не удалось загрузить Google Sign-In',
-      initError: 'Ошибка инициализации Google Sign-In',
-      retryAttempt: 'Попытка {current} из {max}',
-      retryFailed: 'Не удалось повторить. Попытка {current} из {max}',
-      maxRetriesExceeded: 'Превышено максимальное количество попыток',
-      cannotReadAuthData: 'Не удалось прочитать данные аутентификации',
-      demoUser: 'Демо пользователь Google',
-      demoAuthError: 'Ошибка демо-авторизации'
-    },
     // Error messages
     errors: {
       enterName: 'Введите ФИО',
@@ -734,37 +717,20 @@ export const messages = {
       nanny: 'Бала багуу',
       other: 'Башка',
     },
-    // Google Auth
-    loginWithGoogle: 'Google менен кирүү',
-    registerWithGoogle: 'Google менен катталуу',
-    // Add Google Auth error messages and UI text in Kyrgyz
-    googleAuth: {
-      missingClientId: 'Google Client ID жөндөлгөн эмес. Администратор менен байланышыңыз.',
-      tryAgain: 'Кайра аракет кылуу',
-      authError: 'Google аутентификация катасы',
-      loadError: 'Google Sign-In жүктөө мүмкүн болбоду',
-      initError: 'Google Sign-In демилгелөө катасы',
-      retryAttempt: 'Аракет {current} / {max}',
-      retryFailed: 'Кайталоо мүмкүн болбоду. Аракет {current} / {max}',
-      maxRetriesExceeded: 'Максималдуу аракеттер саны ашып кетти',
-      cannotReadAuthData: 'Аутентификация маалыматтарын окуу мүмкүн эмес',
-      demoUser: 'Google демо колдонуучу',
-      demoAuthError: 'Демо-авторизация катасы'
-    },
     // Error messages
     errors: {
-      enterName: 'Аты-жөнүңүздү киргизиңиз',
-      enterPhone: 'Телефон номериңизди киргизиңиз',
-      enterEmail: 'Email киргизиңиз',
-      enterAge: 'Жашыңызды киргизиңиз',
-      enterValidAge: 'Туура жашты киргизиңиз (16дан 100гө чейин)',
+      enterName: 'Атыңызды жана фамилияңызды жазыңыз',
+      enterPhone: 'Телефон номериңизди жазыңыз',
+      enterEmail: 'Email жазыңыз',
+      enterAge: 'Жашыңызды жазыңыз',
+      enterValidAge: 'Туура жашыңызды жазыңыз (16дан 100гө чейин)',
       photoRequired: 'Сүрөт тандаңыз',
       photoSizeLimit: 'Файлдын өлчөмү 5МБдан ашпашы керек',
-      fillAllFields: 'Бардык милдеттүү талааларды толтуруңуз',
-      alreadyApplied: 'Сиз бул вакансияга мурун кайрылгансыз',
-      deleteConfirm: 'Чындап эле жок кылгыңыз келеби?',
-      invalidPhoneFormat: 'Телефон туура эмес форматта',
-      invalidEmailFormat: 'Email туура эмес форматта'
+      fillAllFields: 'Бардык талааларды толтуруңуз',
+      alreadyApplied: 'Сиз бул вакансияга жооп берип койгонсуз',
+      deleteConfirm: 'Өчүрүүнү каалайсызбы?',
+      invalidPhoneFormat: 'Телефон номери туура эмес',
+      invalidEmailFormat: 'Email туура эмес'
     },
     offline: {
       message: 'Интернетке туташуу жок. Оффлайн режимде иштейбиз.'

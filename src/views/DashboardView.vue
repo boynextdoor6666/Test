@@ -5,12 +5,14 @@ import WorkerReviewForm from '@/components/WorkerReviewForm.vue'
 import WorkerReviewList from '@/components/WorkerReviewList.vue'
 import EmployerReviewForm from '@/components/EmployerReviewForm.vue'
 import EmployerReviewList from '@/components/EmployerReviewList.vue'
+import { jobsAPI } from '@/utils/api'
+import type { Job as ApiJob } from '@/utils/api'
 
 // Use the global i18n instance
 const { t } = useI18n()
 
-// Define job interface
-interface Job {
+// Define job interface that extends the API Job with additional fields used locally
+interface LocalJob extends Partial<ApiJob> {
   id: number
   title: string
   description: string
@@ -61,83 +63,34 @@ interface EditProfileErrors {
 }
 
 // Reference variables with proper types
-const jobs = ref<Job[]>([])
-const myJobs = ref<Job[]>([])
+const jobs = ref<LocalJob[]>([])
+const myJobs = ref<LocalJob[]>([])
 
 // Переменная для хранения интервала обновления
 const refreshInterval = ref<number | null>(null)
 
-// Функция для загрузки вакансий из demoJobs
-const loadDemoJobs = () => {
+// Функция для загрузки вакансий 
+const loadJobs = async () => {
   try {
-    // Проверяем наличие вакансий в demoJobs
-    const demoJobsStr = localStorage.getItem('demoJobs')
-    if (demoJobsStr) {
-      console.log('Загружаем вакансии из demoJobs в localStorage')
-      const demoJobs = JSON.parse(demoJobsStr)
-      // Обновляем список вакансий, сохраняя текущие статусы
-      const updatedJobs = demoJobs.map((demoJob: any) => {
-        // Ищем вакансию в текущем списке, чтобы сохранить статус
-        const existingJob = jobs.value.find(j => j.id === demoJob.id)
-        return {
-          ...demoJob,
-          status: existingJob?.status || demoJob.status || 'new'
-        }
-      })
-      jobs.value = updatedJobs
+    const response = await jobsAPI.getJobs();
+    if (response && response.data) {
+      jobs.value = response.data;
     }
     
     // Загрузка также списка моих заявок (для работника)
     if (userType.value === 'worker') {
-      // Проверяем наличие заявок в demoApplications
-      const demoApplicationsStr = localStorage.getItem('demoApplications')
-      if (demoApplicationsStr) {
-        const demoApplications = JSON.parse(demoApplicationsStr)
-        
-        // Фильтруем заявки текущего пользователя
-        const userData = localStorage.getItem('user')
-        if (userData) {
-          const user = JSON.parse(userData)
-          const myApplications = demoApplications.filter((app: any) => app.user_id === user.id)
-          
-          // Для каждой заявки находим соответствующую вакансию
-          if (myApplications.length > 0) {
-            // Обновляем список моих вакансий, сохраняя существующие
-            const currentMyJobIds = myJobs.value.map(job => job.id)
-            
-            // Находим все вакансии, на которые я откликнулся
-            const jobsIAppliedTo = jobs.value.filter(job => 
-              myApplications.some((app: any) => app.job_id === job.id)
-            )
-            
-            // Добавляем новые вакансии в список моих вакансий
-            jobsIAppliedTo.forEach(job => {
-              if (!currentMyJobIds.includes(job.id)) {
-                const jobCopy = {
-                  ...job,
-                  appliedAt: new Date().toISOString(),
-                  status: 'new',
-                  applicantData: {
-                    id: Date.now(),
-                    fullName: user.fullName || user.name,
-                    phone: user.phone,
-                    email: user.email,
-                    skills: user.skills,
-                    experience: user.experience,
-                  },
-                }
-                myJobs.value.push(jobCopy)
-              }
-            })
-            
-            // Сохраняем обновленный список
-            localStorage.setItem('myJobs', JSON.stringify(myJobs.value))
-          }
+      try {
+        const applications = await jobsAPI.getMyApplications();
+        if (applications && applications.data) {
+          // Обновляем список моих вакансий
+          myJobs.value = applications.data.map((app: any) => app.job || {});
         }
+      } catch (err) {
+        console.error('Ошибка при загрузке заявок работника:', err);
       }
     }
   } catch (e) {
-    console.error('Ошибка при загрузке demoJobs или demoApplications:', e)
+    console.error('Ошибка при загрузке вакансий:', e)
   }
 }
 
@@ -154,6 +107,7 @@ onMounted(() => {
         userType.value = parsedUser.userType
       }
       user.value = {
+        id: parsedUser.id,
         fullName: parsedUser.fullName || parsedUser.name || 'Пользователь',
         phone: parsedUser.phone || '',
         email: parsedUser.email || '',
@@ -168,57 +122,18 @@ onMounted(() => {
       }
 
       console.log('Данные пользователя загружены в компонент:', user.value)
-
-      // Проверяем сохранение возраста и фото
-      console.log('Загруженный возраст:', parsedUser.age)
-      console.log('Загруженное фото:', parsedUser.photo ? 'Фото найдено' : 'Фото не найдено')
     } catch (e) {
       console.error('Ошибка при загрузке данных пользователя:', e)
     }
   }
 
   // Загрузка вакансий
-  const jobsData = localStorage.getItem('jobs')
-  if (jobsData) {
-    try {
-      const parsedJobs = JSON.parse(jobsData)
-      // Добавляем статус, если его нет (для совместимости со страницей Найти работу)
-      jobs.value = parsedJobs.map((job: any) => ({
-        ...job,
-        status: job.status || 'new',
-      }))
-    } catch (e) {
-      console.error('Ошибка при загрузке вакансий:', e)
-      jobs.value = defaultJobs
-    }
-  } else {
-    jobs.value = defaultJobs
-    localStorage.setItem('jobs', JSON.stringify(defaultJobs))
-  }
-
-  // Загрузка списка принятых вакансий для работника
-  const myJobsData = localStorage.getItem('myJobs')
-  if (myJobsData && userType.value === 'worker') {
-    try {
-      myJobs.value = JSON.parse(myJobsData)
-    } catch (e) {
-      console.error('Ошибка при загрузке принятых вакансий:', e)
-      myJobs.value = []
-    }
-  }
-
-  // Загружаем фото из пользовательских данных, если оно есть
-  if (user.value.photo) {
-    profilePhoto.preview = user.value.photo
-  }
-
-  // Загружаем вакансии из demoJobs
-  loadDemoJobs()
+  loadJobs();
   
   // Устанавливаем интервал для периодического обновления списка вакансий
   refreshInterval.value = window.setInterval(() => {
-    loadDemoJobs()
-  }, 5000) // Обновляем каждые 5 секунд
+    loadJobs();
+  }, 30000) // Обновляем каждые 30 секунд
 })
 
 // Очищаем интервал при размонтировании компонента
@@ -330,27 +245,11 @@ const filteredJobs = computed(() => {
 const availableJobs = computed(() => {
   if (userType.value !== 'worker') return []
 
-  // Загружаем вакансии из demoJobs в localStorage
-  let availableJobList = []
-  try {
-    // Сначала проверяем наличие вакансий в demoJobs
-    const demoJobsStr = localStorage.getItem('demoJobs')
-    if (demoJobsStr) {
-      const demoJobs = JSON.parse(demoJobsStr)
-      availableJobList = demoJobs
-    } else {
-      // Используем обычный список, если demoJobs отсутствуют
-      availableJobList = jobs.value
-    }
-  } catch (e) {
-    console.error('Ошибка при загрузке demoJobs:', e)
-    availableJobList = jobs.value
-  }
-
+  // Загружаем все доступные вакансии
   // Показываем вакансии, которые еще не приняты этим работником
   const myJobIds = myJobs.value.map((job) => job.id)
 
-  return availableJobList.filter((job) => {
+  return jobs.value.filter((job) => {
     // Базовая фильтрация - не в моих откликах
     const basicFilter = !myJobIds.includes(job.id)
 
@@ -390,7 +289,9 @@ const setStatusFilter = (status: string) => {
 }
 
 // Форматирование статуса
-const formatStatus = (status: string) => {
+const formatStatus = (status: string | undefined) => {
+  if (!status) return '';
+  
   const statusMap: Record<string, string> = {
     new: t('newStatus'),
     'in-progress': t('inProgressStatus'),
@@ -604,9 +505,9 @@ const saveProfileChanges = () => {
     // Создаем обновленный объект пользователя, сохраняя все существующие поля
     const updatedUser = {
       ...parsedUser,
-      // Обновляем все поля, включая используемые Google Auth
+      // Обновляем все поля
       fullName: user.value.fullName,
-      name: user.value.fullName, // Для совместимости с форматом Google Auth
+      name: user.value.fullName, // Для совместимости
       phone: user.value.phone,
       email: user.value.email,
       age: user.value.age,
@@ -648,18 +549,15 @@ const saveProfileChanges = () => {
 const isApplying = ref(false)
 
 // --- Функции для принятия вакансий (для работника) ---
-const applyForJob = async (job: Job) => {
+const applyForJob = async (job: LocalJob) => {
   // Предотвращаем повторные нажатия
   if (isApplying.value) return
   
   try {
     isApplying.value = true
     
-    // Предварительно загружаем API модуль, чтобы избежать задержек
-    const { jobsAPI } = await import('@/utils/api')
-    
     // Используем таймаут для ограничения времени запроса
-    const applyPromise = jobsAPI.apply(job.id)
+    const applyPromise = jobsAPI.apply(String(job.id))
     
     // Добавляем таймаут в 5 секунд для отмены операции, если она занимает слишком много времени
     const timeoutPromise = new Promise((_, reject) => {
@@ -696,11 +594,8 @@ const applyForJob = async (job: Job) => {
         // Добавляем в список принятых вакансий
         myJobs.value.push(jobCopy)
 
-        // Сохраняем в localStorage
-        localStorage.setItem('myJobs', JSON.stringify(myJobs.value))
-
         // Принудительно обновляем список доступных вакансий, чтобы скрыть ту, на которую уже отправлен отклик
-        loadDemoJobs()
+        loadJobs()
       }
       
       // Показываем уведомление об успехе
@@ -726,29 +621,16 @@ const applyForJob = async (job: Job) => {
 
 // Добавим функции для управления статусом заявок для работодателя
 const updateApplicationStatus = (jobId: number, applicantId: number, newStatus: string) => {
-  // Обновляем статус заявки в общем списке вакансий
-  const jobIndex = jobs.value.findIndex((job) => job.id === jobId)
-  const job = jobs.value[jobIndex]
-
-  if (jobIndex !== -1 && job?.applications) {
-    const appIndex = job.applications.findIndex(
-      (app) => app.applicantId === applicantId,
-    )
-
-    if (appIndex !== -1 && job.applications[appIndex]) {
-      const application = job.applications[appIndex]
-      if (application) {
-        application.status = newStatus
-        localStorage.setItem('jobs', JSON.stringify(jobs.value))
-
-        // Если статус "принято", обновляем статус самой вакансии
-        if (newStatus === 'accepted') {
-          job.status = 'in-progress'
-          localStorage.setItem('jobs', JSON.stringify(jobs.value))
-        }
-      }
-    }
-  }
+  // Обновляем статус заявки через API
+  jobsAPI.updateApplicationStatus(String(jobId), String(applicantId), newStatus as 'accepted' | 'rejected')
+    .then(response => {
+      // Перезагружаем данные
+      loadJobs();
+    })
+    .catch(error => {
+      console.error('Ошибка при обновлении статуса заявки:', error);
+      alert('Не удалось обновить статус заявки');
+    });
 }
 
 // Функция для отмены отклика на вакансию (для работника)
@@ -756,46 +638,38 @@ const cancelApplication = (jobId: number) => {
   if (!user.value?.fullName) return
 
   if (confirm('Вы уверены, что хотите отменить отклик на эту вакансию?')) {
-    // Удаляем из списка принятых вакансий
-    const jobIndex = myJobs.value.findIndex((job) => job.id === jobId)
-    if (jobIndex !== -1) {
-      myJobs.value.splice(jobIndex, 1)
-      localStorage.setItem('myJobs', JSON.stringify(myJobs.value))
-
-      // Удаляем заявку из общего списка вакансий
-      const allJobIndex = jobs.value.findIndex((job) => job.id === jobId)
-      const job = jobs.value[allJobIndex]
-      
-      if (allJobIndex !== -1 && job?.applications) {
-        const appIndex = job.applications.findIndex(
-          (app) => app.applicantName === user.value.fullName,
-        )
-        if (appIndex !== -1) {
-          job.applications.splice(appIndex, 1)
-          localStorage.setItem('jobs', JSON.stringify(jobs.value))
+    jobsAPI.cancelApplication(String(jobId))
+      .then(response => {
+        // Удаляем из списка принятых вакансий
+        const jobIndex = myJobs.value.findIndex((job) => job.id === jobId)
+        if (jobIndex !== -1) {
+          myJobs.value.splice(jobIndex, 1)
+          // Перезагружаем данные
+          loadJobs();
         }
-      }
-    }
+      })
+      .catch(error => {
+        console.error('Ошибка при отмене отклика:', error);
+        alert('Не удалось отменить отклик на вакансию');
+      });
   }
 }
 
 // --- Функции для изменения статуса вакансии ---
 const changeJobStatus = (jobId: number, newStatus: string) => {
-  // Обновляем статус в списке всех вакансий
-  const jobIndex = jobs.value.findIndex((job) => job.id === jobId)
-  if (jobIndex !== -1) {
-    jobs.value[jobIndex].status = newStatus
-    localStorage.setItem('jobs', JSON.stringify(jobs.value))
-  }
-
-  // Если это принятая вакансия работника, обновляем и там
-  if (userType.value === 'worker') {
-    const myJobIndex = myJobs.value.findIndex((job) => job.id === jobId)
-    if (myJobIndex !== -1) {
-      myJobs.value[myJobIndex].status = newStatus
-      localStorage.setItem('myJobs', JSON.stringify(myJobs.value))
-    }
-  }
+  // Создаем объект данных для обновления
+  const updateData: Record<string, any> = { status: newStatus }
+  
+  // Обновляем статус через API
+  jobsAPI.updateJob(String(jobId), updateData)
+    .then(response => {
+      // Перезагружаем данные
+      loadJobs();
+    })
+    .catch(error => {
+      console.error('Ошибка при изменении статуса вакансии:', error);
+      alert('Не удалось изменить статус вакансии');
+    });
 }
 
 // --- Добавление вакансии ---
@@ -955,11 +829,18 @@ const handleEditJob = () => {
 // --- Удаление вакансии ---
 const handleDeleteJob = (jobId: number) => {
   if (confirm('Вы уверены, что хотите удалить эту вакансию?')) {
-    const index = jobs.value.findIndex((job) => job.id === jobId)
-    if (index !== -1) {
-      jobs.value.splice(index, 1)
-      localStorage.setItem('jobs', JSON.stringify(jobs.value))
-    }
+    jobsAPI.deleteJob(String(jobId))
+      .then(response => {
+        // Удаляем из списка вакансий
+        const index = jobs.value.findIndex((job) => job.id === jobId)
+        if (index !== -1) {
+          jobs.value.splice(index, 1)
+        }
+      })
+      .catch(error => {
+        console.error('Ошибка при удалении вакансии:', error);
+        alert('Не удалось удалить вакансию');
+      });
   }
 }
 
@@ -1040,8 +921,8 @@ const handleAddJob = async () => {
           console.log('Вакансия добавлена в список jobs:', newJobData);
           
           // Обновляем список вакансий
-          loadDemoJobs();
-          console.log('Обновлен список вакансий через loadDemoJobs');
+          loadJobs();
+          console.log('Обновлен список вакансий через loadJobs');
         } else {
           console.error('API вернул ошибку или нет success:', result);
         }

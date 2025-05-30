@@ -3,8 +3,6 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import GoogleSignIn from '@/components/GoogleSignIn.vue'
-import GoogleSignInDev from '@/components/GoogleSignInDev.vue'
 import { authAPI } from '@/utils/api'
 
 const router = useRouter()
@@ -184,14 +182,6 @@ function handleRegister() {
             >
               {{ t('loginPage.registerButton') }}
             </button>
-          </div>
-
-          <!-- Google auth -->
-          <div class="social-login">
-            <div class="divider">
-              <span>{{ t('loginPage.or') }}</span>
-            </div>
-            <GoogleSignIn />
           </div>
 
           <!-- Демо-аккаунты -->

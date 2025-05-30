@@ -2,8 +2,6 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import GoogleSignIn from '@/components/GoogleSignIn.vue'
-import GoogleSignInDev from '@/components/GoogleSignInDev.vue'
 import { authAPI } from '@/utils/api'
 
 const router = useRouter()
@@ -94,24 +92,6 @@ const errors = ref<ValidationErrors>({
 })
 
 const isLoading = ref(false)
-
-// Добавляем проверку на наличие ошибки redirect_uri_mismatch в URL
-const urlParams = new URLSearchParams(window.location.search)
-const hasRedirectError = urlParams.get('error') === 'redirect_uri_mismatch'
-const showRedirectError = ref(hasRedirectError)
-
-// Возвращаем origin для использования в шаблоне
-const currentOrigin = computed(() => window.location.origin)
-
-// Функция для отображения инструкций по исправлению ошибки redirect_uri_mismatch
-const showGoogleOAuthInstructions = () => {
-  showRedirectError.value = true
-}
-
-// Функция для скрытия инструкций
-const hideGoogleOAuthInstructions = () => {
-  showRedirectError.value = false
-}
 
 const isOnlineMode = ref(false)
 
@@ -385,84 +365,10 @@ const setUserType = (type: string) => {
             </button>
           </div>
 
-          <!-- Google auth button -->
-          <div class="social-login">
-            <div class="divider">
-              <span>{{ t('loginPage.or') }}</span>
-            </div>
-            <GoogleSignIn :isRegister="true" />
-          </div>
-
           <div class="login-link">
             {{ t('registerPage.alreadyHaveAccount') }} <router-link to="/login">{{ t('registerPage.loginLink') }}</router-link>
           </div>
         </form>
-
-        <!-- Ошибка "redirect_uri_mismatch" с инструкциями по исправлению -->
-        <div v-if="showRedirectError" class="oauth-error-container">
-          <div class="oauth-error-card">
-            <div class="oauth-error-header">
-              <h3>{{ t('registerPage.googleOAuth.errorTitle') }}</h3>
-              <button class="close-btn" @click="hideGoogleOAuthInstructions">&times;</button>
-            </div>
-            <div class="oauth-error-content">
-              <p>
-                <strong>{{ t('registerPage.googleOAuth.problem') }}:</strong> {{ t('registerPage.googleOAuth.problemDescription') }}
-              </p>
-
-              <div class="error-details">
-                <p>
-                  {{ t('registerPage.googleOAuth.currentRedirectUri') }}: <code>{{ currentOrigin }}</code>
-                </p>
-              </div>
-
-              <h4>{{ t('registerPage.googleOAuth.stepsToFix') }}:</h4>
-              <ol>
-                <li>
-                  {{ t('registerPage.googleOAuth.openConsole') }}
-                  <a href="https://console.cloud.google.com/apis/credentials" target="_blank"
-                    >Google Cloud Console</a
-                  >
-                </li>
-                <li>{{ t('registerPage.googleOAuth.findProject') }}</li>
-                <li>{{ t('registerPage.googleOAuth.goToCredentials') }}</li>
-                <li>{{ t('registerPage.googleOAuth.findOAuthClient') }}</li>
-                <li>
-                  {{ t('registerPage.googleOAuth.addRedirectUris') }}:
-                  <ul>
-                    <li>
-                      <code>{{ currentOrigin }}</code>
-                    </li>
-                    <li>
-                      <code>{{ currentOrigin }}/</code>
-                    </li>
-                    <li>
-                      <code>{{ currentOrigin }}/login</code>
-                    </li>
-                    <li>
-                      <code>{{ currentOrigin }}/register</code>
-                    </li>
-                    <li>
-                      <code>{{ currentOrigin }}/dashboard</code>
-                    </li>
-                  </ul>
-                </li>
-                <li>{{ t('registerPage.googleOAuth.saveChanges') }}</li>
-                <li>{{ t('registerPage.googleOAuth.changesEffect') }}</li>
-              </ol>
-
-              <p class="note">
-                {{ t('registerPage.googleOAuth.note') }}
-              </p>
-
-              <div class="oauth-error-actions">
-                <button class="btn btn-primary" @click="hideGoogleOAuthInstructions">
-                  {{ t('registerPage.googleOAuth.gotIt') }}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   </div>
