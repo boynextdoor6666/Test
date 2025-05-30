@@ -7,13 +7,29 @@ import { computed } from 'vue'
  * Отображает желтые звезды в соответствии с рейтингом
  */
 
-const props = defineProps<{
-  rating: number // значение рейтинга от 0 до 5
-  reviewCount?: number // количество отзывов
-  showValue?: boolean // показывать ли числовое значение рейтинга
-  showCount?: boolean // показывать ли количество отзывов
-  size?: 'sm' | 'md' | 'lg' // размер звезд
-}>()
+const props = defineProps({
+  rating: {
+    type: Number,
+    required: true
+  },
+  reviewCount: {
+    type: Number,
+    default: 0
+  },
+  size: {
+    type: String,
+    default: 'md', // options: sm, md, lg
+    validator: (value: string) => ['sm', 'md', 'lg'].includes(value)
+  },
+  showValue: {
+    type: Boolean,
+    default: true
+  },
+  showCount: {
+    type: Boolean,
+    default: false
+  }
+})
 
 // Вычисляем массив звезд на основе рейтинга
 const stars = computed(() => {
@@ -51,79 +67,71 @@ const sizeClass = computed(() => {
   }
 })
 
-// Форматируем рейтинг для отображения (одно число после запятой)
-const formattedRating = computed(() => {
-  return props.rating.toFixed(1)
-})
+const getStarClass = (index: number, rating: number) => {
+  if (rating >= index) return 'fas fa-star'
+  if (rating >= index - 0.5) return 'fas fa-star-half-alt'
+  return 'far fa-star'
+}
+
+const getSizeClass = (size: string) => {
+  switch (size) {
+    case 'sm': return 'stars-sm'
+    case 'lg': return 'stars-lg'
+    default: return 'stars-md'
+  }
+}
 </script>
 
 <template>
-  <div class="rating-stars" :class="sizeClass">
-    <div class="stars">
-      <span v-for="(star, index) in stars" :key="index" class="star">
-        <i v-if="star === 'full'" class="fas fa-star"></i>
-        <i v-else-if="star === 'half'" class="fas fa-star-half-alt"></i>
-        <i v-else class="far fa-star"></i>
-      </span>
+  <div class="rating-stars-container">
+    <div class="stars" :class="getSizeClass(size)">
+      <i v-for="i in 5" :key="i" :class="getStarClass(i, rating)"></i>
     </div>
-    
-    <div v-if="showValue || showCount" class="rating-info">
-      <span v-if="showValue" class="rating-value">{{ formattedRating }}</span>
-      <span v-if="showValue && showCount" class="rating-separator">&nbsp;•&nbsp;</span>
-      <span v-if="showCount" class="rating-count">{{ reviewCount }} {{ reviewCount === 1 ? 'отзыв' : (reviewCount && reviewCount < 5 ? 'отзыва' : 'отзывов') }}</span>
-    </div>
+    <span v-if="showValue" class="rating-value">{{ rating.toFixed(1) }}</span>
+    <span v-if="showCount && reviewCount > 0" class="review-count">
+      ({{ reviewCount }} {{ 
+        reviewCount % 10 === 1 && reviewCount % 100 !== 11 
+          ? 'отзыв' 
+          : reviewCount % 10 >= 2 && reviewCount % 10 <= 4 && (reviewCount % 100 < 10 || reviewCount % 100 >= 20) 
+            ? 'отзыва' 
+            : 'отзывов' 
+      }})
+    </span>
   </div>
 </template>
 
 <style scoped>
-.rating-stars {
-  display: inline-flex;
+.rating-stars-container {
+  display: flex;
   align-items: center;
-  font-family: var(--font-family-body);
+  gap: 8px;
 }
 
 .stars {
   display: flex;
-  align-items: center;
-}
-
-.star {
+  gap: 2px;
   color: #FFD700;
-  margin-right: 2px;
-  filter: drop-shadow(0px 0px 1px rgba(0, 0, 0, 0.2));
 }
 
-.star:last-child {
-  margin-right: 0;
+.stars-sm {
+  font-size: 0.85rem;
 }
 
-.rating-info {
-  margin-left: 6px;
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-}
-
-.rating-value {
-  font-weight: var(--font-weight-bold);
-  color: var(--text-color);
-}
-
-.rating-count {
-  font-weight: var(--font-weight-regular);
-}
-
-/* Размеры звезд */
-.stars-sm .star i {
-  font-size: 0.9rem;
-}
-
-.stars-md .star i {
+.stars-md {
   font-size: 1.1rem;
 }
 
-.stars-lg .star i {
-  font-size: 1.4rem;
+.stars-lg {
+  font-size: 1.5rem;
+}
+
+.rating-value {
+  font-weight: var(--font-weight-medium);
+  color: var(--text-color);
+}
+
+.review-count {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
 }
 </style> 

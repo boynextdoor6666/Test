@@ -378,6 +378,23 @@ export const messages = {
     offline: {
       message: 'Нет подключения к интернету. Работаем в оффлайн режиме.'
     },
+    // Reviews translations
+    workerReviews: 'Отзывы о работнике',
+    employerReviews: 'Отзывы о работодателе',
+    leaveWorkerReview: 'Оставить отзыв о работнике',
+    leaveEmployerReview: 'Оставить отзыв о работодателе',
+    yourRating: 'Ваша оценка',
+    yourReview: 'Ваш отзыв',
+    submitReview: 'Отправить отзыв',
+    submittingReview: 'Отправка...',
+    reviewSuccess: 'Спасибо за ваш отзыв!',
+    reviewError: 'Ошибка при отправке отзыва',
+    reviewEmployer: 'Оценить работодателя',
+    reviewWorker: 'Оценить работника',
+    noReviewsYet: 'Пока нет отзывов.',
+    basedOnCompletedJob: 'Отзыв оставлен на основе выполненной работы',
+    loadingReviews: 'Загрузка отзывов...',
+    errorLoadingReviews: 'Не удалось загрузить отзывы',
   },
   kg: {
     profile: 'Профиль',
@@ -752,6 +769,23 @@ export const messages = {
     offline: {
       message: 'Интернетке туташуу жок. Оффлайн режимде иштейбиз.'
     },
+    // Reviews translations
+    workerReviews: 'Жумушчу жөнүндө пикирлер',
+    employerReviews: 'Иш берүүчү жөнүндө пикирлер',
+    leaveWorkerReview: 'Жумушчу жөнүндө пикир калтыруу',
+    leaveEmployerReview: 'Иш берүүчү жөнүндө пикир калтыруу',
+    yourRating: 'Сиздин баалооңуз',
+    yourReview: 'Сиздин пикириңиз',
+    submitReview: 'Пикир жөнөтүү',
+    submittingReview: 'Жөнөтүлүүдө...',
+    reviewSuccess: 'Пикириңиз үчүн рахмат!',
+    reviewError: 'Пикир жөнөтүүдө ката кетти',
+    reviewEmployer: 'Иш берүүчүнү баалоо',
+    reviewWorker: 'Жумушчуну баалоо',
+    noReviewsYet: 'Азырынча пикирлер жок.',
+    basedOnCompletedJob: 'Пикир аткарылган иштин негизинде калтырылды',
+    loadingReviews: 'Пикирлер жүктөлүүдө...',
+    errorLoadingReviews: 'Пикирлерди жүктөө мүмкүн болбоду',
   },
 }
 

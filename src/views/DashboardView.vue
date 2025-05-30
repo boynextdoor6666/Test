@@ -3,6 +3,8 @@ import { ref, computed, onMounted, reactive, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import WorkerReviewForm from '@/components/WorkerReviewForm.vue'
 import WorkerReviewList from '@/components/WorkerReviewList.vue'
+import EmployerReviewForm from '@/components/EmployerReviewForm.vue'
+import EmployerReviewList from '@/components/EmployerReviewList.vue'
 
 // Use the global i18n instance
 const { t } = useI18n()
@@ -16,7 +18,8 @@ interface Job {
   location: string
   phone: string
   date: string
-  status: string
+  status?: string
+  employer_id?: number
   category?: string
   remarks?: string
   applications?: Array<any>
@@ -25,6 +28,7 @@ interface Job {
 
 // User interface definition
 interface User {
+  id?: number | string
   fullName: string
   phone: string
   email: string
@@ -1097,6 +1101,38 @@ const handleWorkerReviewSubmitted = () => {
   // Reload data or update UI
   alert('Отзыв успешно отправлен!')
 }
+
+// For employer reviews
+const showEmployerReviewModal = ref(false)
+const currentEmployerId = ref<number | null>(null)
+const selectedJobForEmployerReview = ref<number | null>(null)
+
+// Function to open employer review modal
+const openEmployerReviewModal = (employerId: number | undefined, jobId: number) => {
+  if (!employerId) {
+    console.error('Employer ID is undefined')
+    alert('Невозможно оставить отзыв: ID работодателя не найден')
+    return
+  }
+  
+  currentEmployerId.value = employerId
+  selectedJobForEmployerReview.value = jobId
+  showEmployerReviewModal.value = true
+}
+
+// Function to close employer review modal
+const closeEmployerReviewModal = () => {
+  showEmployerReviewModal.value = false
+  currentEmployerId.value = null
+  selectedJobForEmployerReview.value = null
+}
+
+// Handler for when an employer review is submitted
+const handleEmployerReviewSubmitted = () => {
+  closeEmployerReviewModal()
+  // Reload data or update UI
+  alert('Отзыв о работодателе успешно отправлен!')
+}
 </script>
 
 <template>
@@ -1251,6 +1287,11 @@ const handleWorkerReviewSubmitted = () => {
             <worker-review-list :worker-id="Number(user.id) || 0" />
           </div>
         </div>
+
+        <!-- Add employer reviews section for employers -->
+        <div v-if="userType === 'employer'" class="profile-reviews">
+          <employer-review-list :employer-id="Number(user.id) || 0" />
+        </div>
       </div>
 
       <!-- Работы/Задания -->
@@ -1383,6 +1424,13 @@ const handleWorkerReviewSubmitted = () => {
                   @click="cancelApplication(job.id)"
                 >
                   <i class="fas fa-times"></i> {{ t('cancelApplication') }}
+                </button>
+                <button 
+                  v-if="userType === 'worker' && job.status === 'completed'"
+                  class="btn btn-outline"
+                  @click="openEmployerReviewModal(job.employer_id, job.id)"
+                >
+                  <i class="fas fa-star"></i> Оценить работодателя
                 </button>
               </div>
             </div>
@@ -1994,6 +2042,25 @@ const handleWorkerReviewSubmitted = () => {
             :worker-id="currentWorkerId || 0" 
             :job-id="selectedJobForReview || 0"
             @review-submitted="handleWorkerReviewSubmitted"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Модальное окно для отзыва о работодателе -->
+    <div v-if="showEmployerReviewModal" class="modal-overlay">
+      <div class="modal">
+        <div class="modal-header">
+          <h2>Оставить отзыв о работодателе</h2>
+          <button class="close-btn" @click="closeEmployerReviewModal">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <employer-review-form 
+            :employer-id="currentEmployerId || 0"
+            :job-id="selectedJobForEmployerReview || 0"
+            @review-submitted="handleEmployerReviewSubmitted"
           />
         </div>
       </div>
