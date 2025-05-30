@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, reactive, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import WorkerReviewForm from '@/components/WorkerReviewForm.vue'
+import WorkerReviewList from '@/components/WorkerReviewList.vue'
 
 // Use the global i18n instance
 const { t } = useI18n()
@@ -1069,6 +1071,32 @@ const handleAddJob = async () => {
     isAddingJob.value = false;
   }
 }
+
+// For worker reviews
+const showWorkerReviewModal = ref(false)
+const currentWorkerId = ref<number | null>(null)
+const selectedJobForReview = ref<number | null>(null)
+
+// Function to open worker review modal
+const openWorkerReviewModal = (workerId: number, jobId: number) => {
+  currentWorkerId.value = workerId
+  selectedJobForReview.value = jobId
+  showWorkerReviewModal.value = true
+}
+
+// Function to close worker review modal
+const closeWorkerReviewModal = () => {
+  showWorkerReviewModal.value = false
+  currentWorkerId.value = null
+  selectedJobForReview.value = null
+}
+
+// Handler for when a review is submitted
+const handleWorkerReviewSubmitted = () => {
+  closeWorkerReviewModal()
+  // Reload data or update UI
+  alert('Отзыв успешно отправлен!')
+}
 </script>
 
 <template>
@@ -1196,6 +1224,31 @@ const handleAddJob = async () => {
               <i :class="authProviderIcon" class="auth-icon"></i>
               {{ authProviderName }}
             </span>
+          </div>
+        </div>
+
+        <!-- Additional info for the profile -->
+        <div class="profile-additional-info">
+          <div v-if="userType === 'worker'" class="profile-skills">
+            <h3>{{ t('skillsTitle') }}</h3>
+            <div class="skills-tags" v-if="user.skills && user.skills.length > 0">
+              <span v-for="(skill, index) in user.skills" :key="index" class="skill-tag">
+                {{ skill }}
+              </span>
+            </div>
+            <p v-else class="no-data">{{ t('noSkillsYet') }}</p>
+          </div>
+
+          <div v-if="userType === 'worker'" class="profile-experience">
+            <h3>{{ t('experienceTitle') }}</h3>
+            <p class="experience-text">
+              {{ user.experience || t('noExperienceYet') }}
+            </p>
+          </div>
+          
+          <!-- Add worker reviews section for workers -->
+          <div v-if="userType === 'worker'" class="profile-reviews">
+            <worker-review-list :worker-id="Number(user.id) || 0" />
           </div>
         </div>
       </div>
@@ -1499,6 +1552,15 @@ const handleAddJob = async () => {
                   <div class="applicant-actions" v-else-if="app.status === 'accepted'">
                     <button class="btn btn-success" @click="changeJobStatus(job.id, 'completed')">
                       <i class="fas fa-check-double"></i> Завершить работу
+                    </button>
+                  </div>
+
+                  <div class="applicant-actions" v-else-if="app.status === 'completed'">
+                    <button 
+                      class="btn btn-outline" 
+                      @click="openWorkerReviewModal(app.applicantId, job.id)"
+                    >
+                      <i class="fas fa-star"></i> Оставить отзыв
                     </button>
                   </div>
                 </div>
@@ -1914,6 +1976,25 @@ const handleAddJob = async () => {
         <div class="modal-actions">
           <button type="button" class="btn btn-primary" @click="handleEditJob">Сохранить</button>
           <button type="button" class="btn btn-outline" @click="closeEditJobModal">Отмена</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Модальное окно для отзыва о работнике -->
+    <div v-if="showWorkerReviewModal" class="modal-overlay">
+      <div class="modal">
+        <div class="modal-header">
+          <h2>Оставить отзыв о работнике</h2>
+          <button class="close-btn" @click="closeWorkerReviewModal">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <worker-review-form 
+            :worker-id="currentWorkerId || 0" 
+            :job-id="selectedJobForReview || 0"
+            @review-submitted="handleWorkerReviewSubmitted"
+          />
         </div>
       </div>
     </div>
@@ -2890,5 +2971,52 @@ textarea.form-control {
 /* Form labels dark mode override */
 [data-theme='dark'] .form-group label {
   color: #000000;
+}
+
+.profile-additional-info {
+  margin-top: var(--spacing-lg);
+}
+
+.profile-skills,
+.profile-experience,
+.profile-reviews {
+  margin-bottom: var(--spacing-lg);
+}
+
+.profile-skills h3,
+.profile-experience h3 {
+  font-size: 1.1rem;
+  margin-bottom: var(--spacing-md);
+  color: var(--text-color);
+}
+
+.skills-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.skill-tag {
+  background-color: var(--primary-color-light);
+  color: var(--primary-color);
+  padding: 5px 10px;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+}
+
+.experience-text {
+  line-height: 1.5;
+  color: var(--text-color);
+}
+
+.no-data {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.profile-reviews {
+  margin-top: var(--spacing-xl);
+  border-top: 1px solid var(--border-color);
+  padding-top: var(--spacing-lg);
 }
 </style>

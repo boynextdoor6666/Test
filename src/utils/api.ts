@@ -43,6 +43,7 @@ export interface Job {
   category: string
   requirements: string[]
   employer: string
+  employer_id: number
   employer_photo?: string
   employer_rating?: number
   employer_review_count?: number
@@ -80,6 +81,30 @@ export interface PaginatedResponse<T> {
     total_items: number
     items_per_page: number
   }
+}
+
+// Добавляем интерфейс для отзыва
+export interface Review {
+  id: number
+  user_id: number
+  employer_id?: number  // Optional for worker reviews
+  worker_id?: number    // Optional for employer reviews
+  rating: number
+  content: string
+  created_at: string
+  job_id?: number       // ID of the job for which the review is created
+  user: {
+    id: number
+    name: string
+    avatar?: string
+  }
+}
+
+// Добавляем интерфейс для ответа с отзывами
+export interface ReviewsResponse {
+  reviews: Review[]
+  total: number
+  average_rating: number
 }
 
 // Проверка, работаем ли мы в демо-режиме
@@ -717,6 +742,7 @@ const generateDemoJobs = (): Job[] => [
     category: 'Доставка',
     requirements: ['Наличие транспорта', 'Ответственность'],
     employer: 'ОсОО "Быстрая доставка"',
+    employer_id: 1,
     employer_rating: 4.2,
     employer_review_count: 15,
     urgency: 'medium' as const,
@@ -738,6 +764,7 @@ const generateDemoJobs = (): Job[] => [
     category: 'Мероприятия',
     requirements: ['Коммуникабельность', 'Опрятный внешний вид'],
     employer: 'Event Agency "Праздник"',
+    employer_id: 2,
     employer_rating: 3.7, 
     employer_review_count: 23,
     urgency: 'high' as const,
@@ -759,6 +786,7 @@ const generateDemoJobs = (): Job[] => [
     category: 'Уборка',
     requirements: ['Опыт уборки', 'Наличие инвентаря'],
     employer: 'Строительная компания "Ремонт+"',
+    employer_id: 3,
     employer_rating: 4.8,
     employer_review_count: 42,
     urgency: 'low' as const,
@@ -1016,6 +1044,7 @@ export const jobsAPI = {
       date: jobData.date || new Date().toISOString(),
       requirements: [],
       employer: employerName,
+      employer_id: userId,
       employer_rating: employerRating,
       employer_review_count: employerReviewCount,
       urgency: 'medium' as const,
@@ -1300,6 +1329,308 @@ export const jobsAPI = {
       
       localStorage.setItem('demoJobs', JSON.stringify(savedJobs))
     }
+  }
+}
+
+// Добавляем API для работы с отзывами
+export const reviewsAPI = {
+  async getEmployerReviews(employerId: number): Promise<ReviewsResponse> {
+    try {
+      const response = await api.get(`/employers/${employerId}/reviews`)
+      return response.data
+    } catch (error: any) {
+      if (error.isNetworkError) {
+        // Используем демо-данные в случае ошибки
+        return this.getDemoEmployerReviews(employerId)
+      }
+      throw error
+    }
+  },
+
+  async getWorkerReviews(workerId: number): Promise<ReviewsResponse> {
+    try {
+      const response = await api.get(`/workers/${workerId}/reviews`)
+      return response.data
+    } catch (error: any) {
+      if (error.isNetworkError) {
+        // Используем демо-данные в случае ошибки
+        return this.getDemoWorkerReviews(workerId)
+      }
+      throw error
+    }
+  },
+
+  async createReview(reviewData: {
+    employer_id?: number
+    worker_id?: number
+    job_id?: number
+    rating: number
+    content: string
+  }): Promise<ApiResponse<Review>> {
+    try {
+      const response = await api.post('/reviews', reviewData)
+      return response.data
+    } catch (error: any) {
+      if (error.isNetworkError) {
+        // Создаем демо-отзыв в случае ошибки
+        return this.createDemoReview(reviewData)
+      }
+      throw error
+    }
+  },
+
+  // Методы для работы с демо-данными
+  getDemoEmployerReviews(employerId: number): ReviewsResponse {
+    // Получаем отзывы из localStorage или генерируем новые
+    const savedReviews = JSON.parse(localStorage.getItem('demoReviews') || '[]')
+    const employerReviews = savedReviews.filter((review: Review) => review.employer_id === employerId)
+
+    // Если отзывы не найдены, генерируем случайные
+    if (employerReviews.length === 0 && Math.random() > 0.3) {
+      const newReviews = this.generateDemoEmployerReviews(employerId)
+      
+      // Добавляем к существующим отзывам
+      const allReviews = [...savedReviews, ...newReviews]
+      localStorage.setItem('demoReviews', JSON.stringify(allReviews))
+      
+      return {
+        reviews: newReviews,
+        total: newReviews.length,
+        average_rating: this.calculateAverageRating(newReviews)
+      }
+    }
+    
+    return {
+      reviews: employerReviews,
+      total: employerReviews.length,
+      average_rating: this.calculateAverageRating(employerReviews)
+    }
+  },
+
+  getDemoWorkerReviews(workerId: number): ReviewsResponse {
+    // Получаем отзывы из localStorage или генерируем новые
+    const savedReviews = JSON.parse(localStorage.getItem('demoWorkerReviews') || '[]')
+    const workerReviews = savedReviews.filter((review: Review) => review.worker_id === workerId)
+    
+    return {
+      reviews: workerReviews,
+      total: workerReviews.length,
+      average_rating: this.calculateAverageRating(workerReviews)
+    }
+  },
+
+  generateDemoEmployerReviews(employerId: number): Review[] {
+    // Генерируем от 0 до 5 отзывов
+    const count = Math.floor(Math.random() * 6)
+    const reviews: Review[] = []
+    
+    const comments = [
+      'Отличная компания, рекомендую!',
+      'Хороший работодатель, вовремя платит.',
+      'Нормальные условия для работы.',
+      'Всё понравилось, буду сотрудничать ещё.',
+      'Компания оставила хорошее впечатление.',
+      'Работа была сложнее, чем описана в вакансии.',
+      'Нормальный работодатель, но есть моменты.',
+      'В целом хорошо, но зарплату задержали.',
+      'Отличный коллектив, дружелюбная атмосфера.',
+      'Условия работы соответствуют описанию.',
+      'Работать было комфортно.'
+    ]
+    
+    const names = [
+      'Иван Петров',
+      'Мария Сидорова',
+      'Александр Иванов',
+      'Елена Смирнова',
+      'Михаил Козлов',
+      'Ольга Новикова',
+      'Алексей Соколов',
+      'Татьяна Волкова',
+      'Дмитрий Морозов',
+      'Анна Кузнецова'
+    ]
+    
+    for (let i = 0; i < count; i++) {
+      const rating = Math.floor(Math.random() * 3) + 3 // Рейтинг от 3 до 5
+      const commentIndex = Math.floor(Math.random() * comments.length)
+      const nameIndex = Math.floor(Math.random() * names.length)
+      
+      const date = new Date()
+      date.setDate(date.getDate() - Math.floor(Math.random() * 30)) // Случайная дата в пределах 30 дней
+      
+      reviews.push({
+        id: Date.now() + i,
+        user_id: 1000 + i,
+        employer_id: employerId,
+        rating,
+        content: comments[commentIndex],
+        created_at: date.toISOString(),
+        user: {
+          id: 1000 + i,
+          name: names[nameIndex]
+        }
+      })
+    }
+    
+    return reviews
+  },
+
+  createDemoReview(reviewData: {
+    employer_id?: number
+    worker_id?: number
+    job_id?: number
+    rating: number
+    content: string
+  }): ApiResponse<Review> {
+    // Получаем текущего пользователя
+    const userData = localStorage.getItem('user')
+    let userName = 'Аноним'
+    let userId = Date.now()
+    
+    if (userData) {
+      try {
+        const user = JSON.parse(userData)
+        userName = user.name || 'Аноним'
+        userId = user.id || Date.now()
+      } catch (e) {
+        console.error('Error parsing user data:', e)
+      }
+    }
+    
+    // Создаем новый отзыв
+    const newReview: Review = {
+      id: Date.now(),
+      user_id: userId,
+      employer_id: reviewData.employer_id,
+      worker_id: reviewData.worker_id,
+      job_id: reviewData.job_id,
+      rating: reviewData.rating,
+      content: reviewData.content,
+      created_at: new Date().toISOString(),
+      user: {
+        id: userId,
+        name: userName
+      }
+    }
+    
+    if (reviewData.employer_id) {
+      // Сохраняем отзыв о работодателе в localStorage
+      const savedReviews = JSON.parse(localStorage.getItem('demoReviews') || '[]')
+      savedReviews.push(newReview)
+      localStorage.setItem('demoReviews', JSON.stringify(savedReviews))
+      
+      // Обновляем рейтинг работодателя
+      this.updateEmployerRating(reviewData.employer_id)
+    } else if (reviewData.worker_id) {
+      // Проверяем, может ли этот пользователь оставлять отзывы работнику
+      if (!this.canReviewWorker(reviewData.worker_id, userId, reviewData.job_id)) {
+        return {
+          data: {} as Review,
+          success: false,
+          message: 'Вы не можете оставить отзыв этому работнику, так как он не выполнял работу для вас'
+        }
+      }
+      
+      // Сохраняем отзыв о работнике в localStorage
+      const savedWorkerReviews = JSON.parse(localStorage.getItem('demoWorkerReviews') || '[]')
+      savedWorkerReviews.push(newReview)
+      localStorage.setItem('demoWorkerReviews', JSON.stringify(savedWorkerReviews))
+      
+      // Обновляем рейтинг работника
+      this.updateWorkerRating(reviewData.worker_id)
+    }
+    
+    return {
+      data: newReview,
+      success: true,
+      message: 'Отзыв успешно добавлен'
+    }
+  },
+  
+  // Проверяет, может ли работодатель оставить отзыв работнику
+  canReviewWorker(workerId: number, employerId: number | string, jobId?: number): boolean {
+    // Получаем все заявки
+    const applications = JSON.parse(localStorage.getItem('demoApplications') || '[]')
+    
+    // Получаем все вакансии этого работодателя
+    const jobs = JSON.parse(localStorage.getItem('demoJobs') || '[]')
+    const employerJobs = jobs.filter((job: Job) => job.user_id.toString() === employerId.toString())
+    
+    // Проверяем, есть ли заявки от этого работника на вакансии этого работодателя
+    // и статус заявки должен быть 'accepted' (принята) или 'completed' (завершена)
+    const hasCompletedJobs = applications.some((app: any) => {
+      // Если указан конкретный job_id, проверяем только его
+      if (jobId) {
+        return app.user_id.toString() === workerId.toString() &&
+               app.job_id.toString() === jobId.toString() &&
+               (app.status === 'completed' || app.status === 'accepted');
+      }
+      
+      // Иначе проверяем все вакансии работодателя
+      return app.user_id.toString() === workerId.toString() &&
+             employerJobs.some((job: Job) => job.id.toString() === app.job_id.toString()) &&
+             (app.status === 'completed' || app.status === 'accepted');
+    });
+    
+    return hasCompletedJobs;
+  },
+
+  calculateAverageRating(reviews: Review[]): number {
+    if (reviews.length === 0) return 0
+    
+    const sum = reviews.reduce((total, review) => total + review.rating, 0)
+    return parseFloat((sum / reviews.length).toFixed(1))
+  },
+
+  // Обновляем рейтинг работодателя в демо-режиме
+  updateEmployerRating(employerId: number): void {
+    // Получаем все отзывы
+    const savedReviews = JSON.parse(localStorage.getItem('demoReviews') || '[]')
+    const employerReviews = savedReviews.filter((review: Review) => review.employer_id === employerId)
+    
+    // Рассчитываем средний рейтинг
+    const averageRating = this.calculateAverageRating(employerReviews)
+    
+    // Обновляем все вакансии данного работодателя
+    const savedJobs = JSON.parse(localStorage.getItem('demoJobs') || '[]')
+    const updatedJobs = savedJobs.map((job: Job) => {
+      if (job.employer_id === employerId) {
+        return {
+          ...job,
+          employer_rating: averageRating,
+          employer_review_count: employerReviews.length
+        }
+      }
+      return job
+    })
+    
+    localStorage.setItem('demoJobs', JSON.stringify(updatedJobs))
+  },
+  
+  // Обновляем рейтинг работника в демо-режиме
+  updateWorkerRating(workerId: number): void {
+    // Получаем все отзывы о работнике
+    const savedReviews = JSON.parse(localStorage.getItem('demoWorkerReviews') || '[]')
+    const workerReviews = savedReviews.filter((review: Review) => review.worker_id === workerId)
+    
+    // Рассчитываем средний рейтинг
+    const averageRating = this.calculateAverageRating(workerReviews)
+    
+    // Обновляем информацию о работнике в localStorage
+    const demoUsers = JSON.parse(localStorage.getItem('demoUsers') || '[]')
+    const updatedUsers = demoUsers.map((user: User) => {
+      if (user.id.toString() === workerId.toString()) {
+        return {
+          ...user,
+          rating: averageRating,
+          reviewCount: workerReviews.length
+        }
+      }
+      return user
+    })
+    
+    localStorage.setItem('demoUsers', JSON.stringify(updatedUsers))
   }
 }
 
